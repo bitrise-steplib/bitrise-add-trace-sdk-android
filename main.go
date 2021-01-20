@@ -14,9 +14,11 @@ func failf(format string, v ...interface{}) {
 }
 
 func main() {
+	log.Infof("Creating the configuration file")
 	if err := createConfigurationFile(); err != nil {
 		failf("Could not create the config file, aborting build. Reason: %s\n", err)
 	}
+	log.Infof("Configuration file successfully created")
 
 	//
 	// --- Step Outputs: Export Environment Variables for other Steps:

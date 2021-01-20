@@ -33,7 +33,7 @@ deps:
 
 toolkit:
   go:
-    package_name: github.com/richard-bogdan-bitrise/bitrise-steplib/bitrise-step-add-trace-sdk-android
+    package_name: github.com/bitrise-steplib/bitrise-step-add-trace-sdk-android
 
 
 inputs:

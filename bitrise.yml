@@ -10,9 +10,16 @@ app:
 
 workflows:
   test:
+    steps:
+      - script:
+          inputs:
+          - content: stepman audit --step-yml ./step.yml
+      - go-list:
+      - golint:
+      - errcheck:
+      - go-test:
     after_run:
       - test_config_file
-
 
   # Integration test for creating the config file.
   test_config_file:
