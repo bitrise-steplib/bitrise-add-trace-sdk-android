@@ -77,12 +77,19 @@ workflows:
             echo ""
 
             echo "Checking content of $FILE"
-            expected_content='{"version":"1.0.0","token":"sampleToken"}'
+            expected_content=$(cat <<-END
+            {
+             "version": "1.0.0",
+             "token": "sampleToken"
+            }
+            END
+            )
+
             actual_content=$( cat $FILE )
             if [ "$actual_content" == "$expected_content" ]; then
                 echo -e "${GREEN}$FILE content is the expected!${NC}"
             else
-                echo -e "${RED}$FILE content was \"$actual_content\", but expected \"$expected_content\".${NC}"
+                echo -e "${RED}$FILE content was \n\"$actual_content\", but expected \n\"$expected_content\".${NC}"
                 exit 1
             fi
 

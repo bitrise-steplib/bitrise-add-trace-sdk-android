@@ -30,11 +30,9 @@ deps:
   - name: git
   - name: wget
 
-
 toolkit:
   go:
     package_name: github.com/bitrise-steplib/bitrise-step-add-trace-sdk-android
-
 
 inputs:
   - example_step_input: Default Value - you can leave this empty if you want to

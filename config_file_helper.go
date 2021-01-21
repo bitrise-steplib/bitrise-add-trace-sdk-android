@@ -30,10 +30,10 @@ func getConfigFileContent() (ConfigFileContent, error) {
 // Formats the ConfigFileContent to JSON.
 // Returns the value of the JSON in bytes.
 func formatConfigFileContent(content ConfigFileContent) ([]byte, error) {
-	c, err := json.Marshal(content)
-	log.Debugf("Formatting the config file content to JSON")
+	c, err := json.MarshalIndent(content, "", " ")
+	log.Debugf("Formatting the config file content to JSON: \"%+v\"", content)
 	if err != nil {
-		return c, fmt.Errorf("failed to format the received Configuration to JSON! Error: %s", err)
+		return c, fmt.Errorf("failed to format the received configuration to JSON! Error: %s", err)
 	}
 	return c, nil
 }

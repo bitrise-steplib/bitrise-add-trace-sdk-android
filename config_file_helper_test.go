@@ -1,12 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 )
 
-const expectedConfigFile = `{"version":"1.0.0","token":"sampleToken"}`
+var expectedConfigFile = fmt.Sprint("{\n", ` "version": "1.0.0",`, "\n", ` "token": "sampleToken"`, "\n}")
 
+// If the format changes (test fail should indicate this), the version number should be changed in the configurations.
 func Test_formatConfigFileContent(t *testing.T) {
 	tests := []struct {
 		name    string
