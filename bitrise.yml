@@ -23,6 +23,8 @@ workflows:
 
   # Integration test for creating the config file.
   test_config_file:
+    envs:
+      - BITRISEIO_GIT_REPOSITORY_SLUG: sample-apps-android-sdk22
     steps:
     - script:
         title: Initialise test
@@ -47,6 +49,11 @@ workflows:
         inputs:
         - path: ./_tmp
         - is_create_path: true
+    - script:
+        title: Clone test app
+        inputs:
+          - content: |
+              git clone --branch master https://github.com/bitrise-io/sample-apps-android-sdk22.git
     - path::./:
         title: Step Test
         description: |-
@@ -66,7 +73,7 @@ workflows:
             NC='\033[0m'
 
             echo "Checking if config file created"
-            FILE="bitrise-addons-configuration.json"
+            FILE="$BITRISEIO_GIT_REPOSITORY_SLUG/bitrise-addons-configuration.json"
             if [ -f "$FILE" ]; then
                 echo -e "${GREEN}$FILE exists.${NC}"
             else

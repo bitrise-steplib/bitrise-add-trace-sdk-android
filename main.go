@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/bitrise-io/go-utils/log"
 	"os"
-	"os/exec"
+	"path"
 )
 
 // Called when the main function should be terminated with failure.
@@ -20,24 +20,18 @@ func main() {
 	}
 	log.Infof("Configuration file successfully created")
 
-	//
-	// --- Step Outputs: Export Environment Variables for other Steps:
-	// You can export Environment Variables for other Steps with
-	//  envman, which is automatically installed by `bitrise setup`.
-	// A very simple example:
-	cmdLog, err := exec.Command("bitrise", "envman", "add", "--key", "EXAMPLE_STEP_OUTPUT", "--value", "the value you want to share").CombinedOutput()
-	if err != nil {
-		fmt.Printf("Failed to expose output with envman, error: %#v | output: %s", err, cmdLog)
-		os.Exit(1)
+	log.Infof("Adding Trace injector to project")
+	if err := addTraceInjectorTask(); err != nil {
+		failf("Could not add Trace injector to project, aborting build. Reason: %s\n", err)
 	}
-	// You can find more usage examples on envman's GitHub page
-	//  at: https://github.com/bitrise-io/envman
+	log.Infof("Added Trace injector to project")
 
-	//
-	// --- Exit codes:
-	// The exit code of your Step is very important. If you return
-	//  with a 0 exit code `bitrise` will register your Step as "successful".
-	// Any non zero exit code will be registered as "failed" by `bitrise`.
+	log.Infof("Running Trace injector on project")
+	if err := runTraceInjector(); err != nil {
+		failf("Error when injecting Trace to project, aborting build. Reason: %s\n", err)
+	}
+	log.Infof("Trace injector successfully injected the SDK")
+
 	os.Exit(0)
 }
 
@@ -54,6 +48,29 @@ func createConfigurationFile() error {
 		return err
 	}
 
-	p := fmt.Sprint(os.Getenv(srcDirEnvName), "/", configFileName)
+	src, err := projectDir()
+	if err != nil {
+		return err
+	}
+	p := path.Join(src, configFileName)
 	return createConfigFile(fc, p)
+}
+
+func addTraceInjectorTask() error {
+	projSrc, err := projectDir()
+	if err != nil {
+		return err
+	}
+	if err := appendTraceInjectorTaskToProject(path.Join(projSrc, "build.gradle")); err != nil {
+		return fmt.Errorf("failed to append Trace task to root build.gradle. Reason: %s", err)
+	}
+
+	stepSrc, err := env(stepSrcDirEnvName)
+	if err != nil {
+		return err
+	}
+	if err := addTaskFile(stepSrc, projSrc); err != nil {
+		return fmt.Errorf("failed to add Trace injector task file to project. Reason: %s", err)
+	}
+	return nil
 }
