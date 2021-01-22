@@ -1,0 +1,7 @@
+repositories {
+    jcenter()
+}
+
+dependencies {
+    implementation("io.bitrise.trace:trace-sdk:0.0.3")
+}
