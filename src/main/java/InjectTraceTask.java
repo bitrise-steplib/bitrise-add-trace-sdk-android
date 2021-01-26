@@ -9,17 +9,21 @@ import org.slf4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * Task will inject the required gradle file changes to add Trace to the given Android application.
+ * Task will inject the required gradle file changes to add Trace to the given Android application. For the versions
+ * see 'traceSdk.gradle' and {@link #TRACE_GRADLE_PLUGIN_VERSION}.
  */
 public class InjectTraceTask extends DefaultTask {
 
@@ -58,6 +62,11 @@ public class InjectTraceTask extends DefaultTask {
     private static final String TRACE_GRADLE_PLUGIN_GRADLE_FILE_NAME = "tracePlugin.gradle";
 
     /**
+     * The version of {@link #TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME}, which will be injected project.
+     */
+    private static final String TRACE_GRADLE_PLUGIN_VERSION = "0.0.2";
+
+    /**
      * Environment variable name for the source code of the step.
      */
     private static final String BITRISE_STEP_SRC_ENV = "BITRISE_STEP_SOURCE_DIR";
@@ -69,19 +78,17 @@ public class InjectTraceTask extends DefaultTask {
      * The action that will be performed when this task is run. Does the following:
      * <ul>
      *     <li>ensures {@link #TRACE_SDK_DEPENDENCY_NAME} is a dependency to the app module</li>
-     *     <li>ensures {@link #TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME} is a buildscript dependency for the root
-     *     project</li>
+     *     <li>ensures {@link #TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME} is a buildscript dependency for the app module</li>
      *     <li>ensures that {@link #TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME} is applied as a plugin on the app</li>
      * </ul>
      *
-     * @throws IOException
+     * @throws IOException when any I/O error occurs with the file on the path.
      */
-
-    // TODO javadoc
     @TaskAction
     public void taskAction() throws IOException {
         final Project rootProject = getProject();
         final Project applicationModule = getApplicationModule(rootProject.getSubprojects());
+
         ensureTraceSdkDependency(applicationModule);
         ensureTraceGradlePluginDependency(applicationModule);
         ensureTraceGradlePluginIsApplied(applicationModule);
@@ -100,7 +107,7 @@ public class InjectTraceTask extends DefaultTask {
             }
         }
         throw new IllegalStateException("No module with \"com.android.application\" plugin found. You must have at " +
-                "least one Android application module to install Trace SDK!");
+                "least one Android application module in your project to install Trace SDK!");
     }
     //endregion
 
@@ -110,15 +117,16 @@ public class InjectTraceTask extends DefaultTask {
      * Ensures that the given module has dependency on {@link #TRACE_SDK_DEPENDENCY_NAME}.
      *
      * @param appModule the {@link Project} of the app.
+     * @throws IOException when any I/O error occurs with the file on the path.
      */
-    private void ensureTraceSdkDependency(final Project appModule) {
+    private void ensureTraceSdkDependency(final Project appModule) throws IOException {
         if (hasTraceSdkDependency(appModule)) {
             logger.info("Project \"{}\" already has dependency on \"{}\", skipping injecting the dependency. Please " +
                             "make sure that in your build.gradle files the dependency is defined for all the required" +
                             "configurations! For more information please check the README.md of \"trace-android-sdk\"",
                     appModule.getName(), TRACE_SDK_DEPENDENCY_NAME);
         } else {
-            injectTraceSdkDependency(appModule);
+            addTraceSdkDependency(appModule);
         }
     }
 
@@ -145,11 +153,13 @@ public class InjectTraceTask extends DefaultTask {
     }
 
     /**
-     * Injects the code for adding {@link #TRACE_SDK_DEPENDENCY_NAME} as a dependency to the given Android application.
+     * Injects the code for adding {@link #TRACE_SDK_DEPENDENCY_NAME} as a dependency to the given Android
+     * application and copies {@link #TRACE_SDK_GRADLE_FILE_NAME} to the project.
      *
      * @param appModule the {@link Project} of the Android app.
+     * @throws IOException when any I/O error occurs with the file on the path.
      */
-    private void injectTraceSdkDependency(final Project appModule) {
+    private void addTraceSdkDependency(final Project appModule) throws IOException {
         copyGradleFile(appModule.getProjectDir().getPath(), TRACE_SDK_GRADLE_FILE_NAME);
         appendTraceDependency(appModule.getBuildFile().getPath(), TRACE_SDK_GRADLE_FILE_NAME);
     }
@@ -161,9 +171,8 @@ public class InjectTraceTask extends DefaultTask {
      * Ensures that the given module has dependency on {@link #TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME}.
      *
      * @param appModule the {@link Project} of the app.
-     * @throws IOException
+     * @throws IOException when any I/O error occurs with the file on the path.
      */
-    //TODO javadoc
     private void ensureTraceGradlePluginDependency(final Project appModule) throws IOException {
         if (hasTraceGradlePluginDependency(appModule)) {
             logger.info("Project \"{}\" already has dependency on \"{}\", skipping injecting the dependency. Please " +
@@ -171,7 +180,7 @@ public class InjectTraceTask extends DefaultTask {
                             "configurations! For more information please check the README.md of \"trace-android-sdk\"",
                     appModule.getName(), TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME);
         } else {
-            injectTraceGradlePluginDependency(appModule);
+            addTraceGradlePluginDependency(appModule.getBuildFile().getPath());
         }
     }
 
@@ -185,9 +194,8 @@ public class InjectTraceTask extends DefaultTask {
      */
     public boolean hasTraceGradlePluginDependency(final Project appModule) {
         for (final Configuration configuration : appModule.getBuildscript().getConfigurations()) {
-            final boolean hasPlugin = hasDependency(configuration, TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME,
-                    TRACE_GRADLE_PLUGIN_DEPENDENCY_GROUP_NAME);
-            if (hasPlugin) {
+            if (hasDependency(configuration, TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME,
+                    TRACE_GRADLE_PLUGIN_DEPENDENCY_GROUP_NAME)) {
                 return true;
             }
         }
@@ -198,90 +206,81 @@ public class InjectTraceTask extends DefaultTask {
      * Injects the code for adding {@link #TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME} as a plugin to the given Android
      * application.
      *
-     * @param appModule the {@link Project} of the Android app.
+     * @param buildGradlePath the path of the build.gradle file in the app module.
+     * @throws IOException when any I/O error occurs with the file on the path.
      */
-    private void injectTraceGradlePluginDependency(final Project appModule) throws IOException {
-        final String buildGradlePath = appModule.getBuildFile().getPath();
-        final long[] buildScriptClosurePosition = findBuildScriptPosition(buildGradlePath);
-        if ((buildScriptClosurePosition)[0] >= 0) {
-            insertDependencyToBuildScriptClosure(buildGradlePath, buildScriptClosurePosition[0],
-                    buildScriptClosurePosition[1]);
+    private void addTraceGradlePluginDependency(final String buildGradlePath) throws IOException {
+        if (updateBuildScriptContent(buildGradlePath)) {
+            logger.info("Updated buildscript block of \"{}\".", buildGradlePath);
         } else {
-            insertDependencyWithBuildScriptClosure(appModule);
+            insertDependencyWithBuildScriptClosure(buildGradlePath);
         }
     }
 
     /**
-     * Updates the given build.gradle file, inserts the dependency for {@link #TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME}
-     * to the buildscript closure.
+     * When adding {@link #TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME} to the given project and it does have a buildscript
+     * block in it's build.gradle, this methodpdates the buildscript closure. Injects the dependency on the
+     * {@link #TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME} and adds JCenter as repository. If the buildscript closure is not
+     * present does nothing and returns {@code false}.
      *
-     * @param path       the path of the build.gradle.
-     * @param lineNumber the line number of the buildscript closure.
-     * @param charIndex  the char index of the buildscript closure, just right after the open of the closure.
-     * @throws IOException when the build.gradle file cannot be modified.
+     * @param path the path of the file.
+     * @return {@code true} if the buildscript block has been updated, {@code false otherwise}.
+     * @throws IOException when any I/O error occurs with the file on the path.
      */
-    private void insertDependencyToBuildScriptClosure(final String path, final long lineNumber, final long charIndex)
-            throws IOException {
-        // todo make sure there is repo jcenter or mavencentral
-        try (RandomAccessFile randomAccessFile = new RandomAccessFile(path, "rw")) {
-            String line = randomAccessFile.readLine();
-            int actualLineNumber = 0;
-            while (line != null) {
-                if (actualLineNumber == lineNumber) {
-                    line = insertToStringAt(line, getTraceGradlePluginDependency(), charIndex);
-                }
-                randomAccessFile.writeBytes(line);
-                actualLineNumber++;
-                line = randomAccessFile.readLine();
+    private boolean updateBuildScriptContent(final String path) throws IOException {
+        final String codeContent = getCodeContent(path);
+        final String regex = "buildscript[ \\t\\n\\r]*\\{";
+        final Pattern pattern = Pattern.compile(regex);
+        final Matcher matcher = pattern.matcher(codeContent);
+        if (matcher.find()) {
+            final String updatedContent = matcher.replaceFirst(getUpdatedBuildScriptContent());
+            try (final FileWriter fileWriter = new FileWriter(path, false)) {
+                fileWriter.append(updatedContent);
             }
+            return true;
         }
+        return false;
     }
 
+    /**
+     * When adding {@link #TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME} to the given project and it does not have a
+     * buildscript block in it's build.gradle, this method updates the given build.gradle file, inserts the dependency
+     * for {@link #TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME} with a new buildscript closure.
+     *
+     * @param buildGradlePath the path of the build.gradle.
+     * @throws IOException when any I/O error occurs with the file on the buildGradlePath.
+     */
+    private void insertDependencyWithBuildScriptClosure(final String buildGradlePath) throws IOException {
+        final String buildscriptClosure = "buildscript {\n" +
+                "    %s\n" +
+                "    repositories {\n" +
+                "        jcenter()\n" +
+                "    }\n" +
+                "}";
+        appendContentToFile(buildGradlePath, String.format(buildscriptClosure, getTraceGradlePluginDependency()));
+    }
+
+    /**
+     * Gets the content for adding a buildscript dependency on {@link #TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME}.
+     *
+     * @return the content that should be in the build.gradle.
+     */
     private String getTraceGradlePluginDependency() {
-        // TODO dependencies.add("classpath", "io.bitrise.trace.plugin:trace-gradle-plugin:0.0.2")
-        return "";
+        return String.format("\ndependencies.add(\"classpath\", \"io.bitrise.trace.plugin:trace-gradle-plugin:%s\")",
+                TRACE_GRADLE_PLUGIN_VERSION);
     }
 
     /**
-     * Inserts a String to the given char position.
-     *
-     * @param original  the original String to be updated.
-     * @param toInsert  the String to insert.
-     * @param charIndex the index of the char where it will be inserted
-     * @return the updated String.
+     * Gets the content for updating the buildscript with a new dependency on
+     * {@link #TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME}.
      */
-    private String insertToStringAt(final String original, final String toInsert, final long charIndex) {
-        final StringBuilder stringBuilder = new StringBuilder();
-        for (int i = 0; i < original.length(); i++) {
-            stringBuilder.append(original.charAt(i));
-
-            if (i == charIndex) {
-                stringBuilder.append(toInsert);
-            }
-        }
-        return stringBuilder.toString();
-    }
-
-    private void insertDependencyWithBuildScriptClosure(final Project appModule) {
-        //TODO add it to the end of the given gradle file
-    }
-
-    private long[] findBuildScriptPosition(final String path) {
-        // TODO
-        try (final FileInputStream fileInputStream = new FileInputStream(path);) {
-
-            final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(fileInputStream));
-            String line;
-            int actualLineNumber = 0;
-            while ((line = bufferedReader.readLine()) != null) {
-
-                actualLineNumber++;
-
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return new long[]{0, 0};
+    private String getUpdatedBuildScriptContent() {
+        return String.format("buildscript {" +
+                        "   %s" +
+                        "   repositories {\n" +
+                        "      jcenter()\n" +
+                        "    }"
+                , getTraceGradlePluginDependency());
     }
 
     //endregion
@@ -292,8 +291,9 @@ public class InjectTraceTask extends DefaultTask {
      * Ensures that the given module has applied {@link #TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME} as a plugin.
      *
      * @param appModule the {@link Project} of the app.
+     * @throws IOException when any I/O error occurs with the file on the path.
      */
-    private void ensureTraceGradlePluginIsApplied(final Project appModule) {
+    private void ensureTraceGradlePluginIsApplied(final Project appModule) throws IOException {
         if (isTraceGradlePluginApplied(appModule)) {
             logger.info("Project \"{}\" has already applied \"{}\" as a plugin, skipping injecting the plugin apply. " +
                             "For more information please check the README.md of \"trace-android-sdk\"",
@@ -319,8 +319,9 @@ public class InjectTraceTask extends DefaultTask {
      * application.
      *
      * @param appModule the {@link Project} of the Android app.
+     * @throws IOException when any I/O error occurs with the files on the path.
      */
-    private void injectTraceGradlePluginApply(final Project appModule) {
+    private void injectTraceGradlePluginApply(final Project appModule) throws IOException {
         copyGradleFile(appModule.getProjectDir().getPath(), TRACE_GRADLE_PLUGIN_GRADLE_FILE_NAME);
         appendTraceDependency(appModule.getBuildFile().getPath(), TRACE_GRADLE_PLUGIN_GRADLE_FILE_NAME);
     }
@@ -345,19 +346,15 @@ public class InjectTraceTask extends DefaultTask {
     }
 
     /**
-     * Copies the given Gradle file from the step source to the given Android application.
+     * Copies the given Gradle file from the Bitrise step source directory to the given Android application.
      *
      * @param appModuleDir the path of the {@link Project} of the Android application.
+     * @throws IOException when any I/O error occurs with the files on the path.
      */
-    private void copyGradleFile(final String appModuleDir, final String buildFileName) {
+    private void copyGradleFile(final String appModuleDir, final String buildFileName) throws IOException {
         final Path traceSdkGradleFilePath = Paths.get(getEnv(BITRISE_STEP_SRC_ENV) + "/" + buildFileName);
         final Path destinationPath = Paths.get(appModuleDir + "/" + buildFileName);
-        try {
-            Files.copy(traceSdkGradleFilePath, destinationPath);
-        } catch (final IOException e) {
-            throw new IllegalStateException(String.format("Could not copy %1$s to %2$s. Reason: %3$s",
-                    buildFileName, destinationPath, e.getLocalizedMessage()));
-        }
+        Files.copy(traceSdkGradleFilePath, destinationPath);
     }
 
     /**
@@ -365,20 +362,26 @@ public class InjectTraceTask extends DefaultTask {
      *
      * @param appBuildGradlePath the path of the Gradle build file, which should be extended.
      * @param buildFileName      the given Gradle build file path to apply.
+     * @throws IOException when any I/O error occurs with the file on the path.
      */
-    private void appendTraceDependency(final String appBuildGradlePath, final String buildFileName) {
-        try {
-            Files.write(Paths.get(appBuildGradlePath),
-                    getContentToAppend(appBuildGradlePath, buildFileName).getBytes(),
-                    StandardOpenOption.APPEND);
-        } catch (final IOException e) {
-            throw new IllegalStateException(String.format("Failed to append to %s. Reason: %s", appBuildGradlePath,
-                    e.getLocalizedMessage()));
-        }
+    private void appendTraceDependency(final String appBuildGradlePath, final String buildFileName) throws IOException {
+        appendContentToFile(appBuildGradlePath, getContentToAppend(appBuildGradlePath, buildFileName));
     }
 
     /**
-     * Gets the content to append for the given Gradle build file to apply the given Gradle build file.
+     * Appends the given content to a given file.
+     *
+     * @param path    the path of the file.
+     * @param content the content to append.
+     * @throws IOException when any I/O error occurs with the file on the path.
+     */
+    private void appendContentToFile(final String path, final String content) throws IOException {
+        Files.write(Paths.get(path), content.getBytes(), StandardOpenOption.APPEND);
+    }
+
+    /**
+     * Gets the content to append for the given Gradle build file based on the extension (language) of the file. The
+     * content is to apply the given Gradle build file, the name of this file is an argument.
      *
      * @param appBuildGradlePath the path of the Gradle build file, which should be extended.
      * @param buildFileName      the given Gradle build file path to apply.
@@ -415,6 +418,76 @@ public class InjectTraceTask extends DefaultTask {
             }
         }
         return false;
+    }
+
+    /**
+     * Removes all the commented code from a file and returns it as a String.
+     *
+     * @param path the path of the file to get the code from.
+     * @return the String value of the code.
+     * @throws IOException when any I/O error occurs with the file on the path.
+     */
+    private String getCodeContent(final String path) throws IOException {
+        final String regex = "//|/\\*.*?\\*/";
+        final String currentLineComment = "//";
+        final String greedyCommentStart = "/*";
+        final String greedyCommentEnd = "*/";
+        final Pattern pattern = Pattern.compile(regex);
+
+        final StringBuilder stringBuilder = new StringBuilder();
+        try (final FileInputStream fileInputStream = new FileInputStream(path)) {
+            final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(fileInputStream));
+            String line;
+            boolean isGreedyCommented = false;
+            while ((line = bufferedReader.readLine()) != null) {
+                String reducedLine = removeGreedyCommentBlocksFromLine(line, pattern);
+
+                final int gceIndex = reducedLine.indexOf(greedyCommentEnd);
+                if (gceIndex >= 0) {
+                    reducedLine = reducedLine.substring(reducedLine.indexOf(greedyCommentEnd));
+                    isGreedyCommented = false;
+                } else {
+                    if (isGreedyCommented) {
+                        continue;
+                    }
+                }
+
+                final int clcIndex = reducedLine.indexOf(currentLineComment);
+                final int gcsIndex = reducedLine.indexOf(greedyCommentStart);
+                final int csIndex = getSmallestPositiveNumber(clcIndex, gcsIndex);
+                if (csIndex == gcsIndex) {
+                    isGreedyCommented = true;
+                }
+                stringBuilder.append(reducedLine);
+
+            }
+        }
+        return stringBuilder.toString();
+    }
+
+    /**
+     * Removes complete greedy comment blocks from a line.
+     *
+     * @param line    the given line.
+     * @param pattern the Pattern to use for removing.
+     * @return the line without greedy comment blocks.
+     */
+    private String removeGreedyCommentBlocksFromLine(final String line, final Pattern pattern) {
+        final Matcher matcher = pattern.matcher(line);
+        if (matcher.find()) {
+            return matcher.replaceAll("");
+        }
+        return line;
+    }
+
+    /**
+     * Gets the smallest positive number from the given numbers.
+     *
+     * @param numbers the numbers.
+     * @return the smallest positive number.
+     */
+    private int getSmallestPositiveNumber(final int... numbers) {
+        return Arrays.stream(numbers).filter(i -> i >= 0).min().orElse(-1);
     }
     //endregion
 }
