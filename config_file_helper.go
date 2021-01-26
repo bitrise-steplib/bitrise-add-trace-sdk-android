@@ -43,7 +43,7 @@ func createConfigFile(content []byte, path string) error {
 	log.Debugf("Writing the config file content to \"%s\"", path)
 	err := ioutil.WriteFile(path, content, 0644)
 	if err != nil {
-		return fmt.Errorf("failed to write to the configuraution file! Error: %s", err)
+		return fmt.Errorf("failed to write to the configuration file! Error: %s", err)
 	}
 	return nil
 }

@@ -1,4 +1,4 @@
-// TODO move to proper package io.bitrise.trace.step
+package io.bitrise.trace.step;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;

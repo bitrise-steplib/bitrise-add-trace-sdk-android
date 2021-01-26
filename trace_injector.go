@@ -40,10 +40,10 @@ func appendTraceInjectorTaskToProject(path string) error {
 // Gets the string value for creating the TraceInjectorTask.
 func getTraceInjectorTaskContent(path string) (string, error) {
 	if strings.HasSuffix(path, kotlinBuildGradleSuffix) {
-		// tasks.register<InjectTraceTask>("injectTraceTask")
+		// tasks.register<io.bitrise.trace.step.InjectTraceTask>("injectTraceTask")
 		return fmt.Sprint("\n\ntasks.register<", injectTraceTaskClassName, ">(\"", injectTraceTaskName, "\")"), nil
 	} else if strings.HasSuffix(path, groovyBuildGradleSuffix) {
-		// task injectTraceTask(type: InjectTraceTask)
+		// task injectTraceTask(type: io.bitrise.trace.step.InjectTraceTask)
 		return fmt.Sprint("\n\ntask ", injectTraceTaskName, "(type: ", injectTraceTaskClassName, ")"), nil
 	}
 	return "", fmt.Errorf("could not determine the language for gradle file at %s", path)
@@ -101,7 +101,7 @@ func runTraceInjector() error {
 	cmd.Stderr = &stdErr
 	e := cmd.Run()
 	if e != nil {
-		return fmt.Errorf("InjectTraceTask failed. Error: %s\nConsole output: %s\nError output: %s", e, stdOut.String(), stdErr.String())
+		return fmt.Errorf("io.bitrise.trace.step.InjectTraceTask failed. Error: %s\nConsole output: %s\nError output: %s", e, stdOut.String(), stdErr.String())
 	}
 
 	return nil

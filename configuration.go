@@ -20,9 +20,9 @@ const configFileVersion = "1.0.0"
 
 // Injector Gradle task values
 const injectTraceTaskName = "injectTraceTask"
-const injectTraceTaskClassName = "InjectTraceTask"
-const injectTraceTaskFileSrcPath = "src/main/java/InjectTraceTask.java"
-const injectTraceTaskFileDstPath = "buildSrc/src/main/java/InjectTraceTask.java"
+const injectTraceTaskClassName = "io.bitrise.trace.step.InjectTraceTask"
+const injectTraceTaskFileSrcPath = "src/main/java/io/bitrise/trace/step/InjectTraceTask.java"
+const injectTraceTaskFileDstPath = "buildSrc/src/main/java/io/bitrise/trace/step/InjectTraceTask.java"
 
 // Language dependent values
 const kotlinBuildGradleSuffix = ".gradle.kts"
