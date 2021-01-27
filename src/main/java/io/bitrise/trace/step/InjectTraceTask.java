@@ -7,16 +7,15 @@ import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.tasks.TaskAction;
 import org.slf4j.Logger;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -428,39 +427,48 @@ public class InjectTraceTask extends DefaultTask {
      * @throws IOException when any I/O error occurs with the file on the path.
      */
     private String getCodeContent(final String path) throws IOException {
-        final String regex = "//|/\\*.*?\\*/";
+        final List<String> lines = Files.readAllLines(new File(path).toPath());
+        return removeCommentedCode(lines);
+    }
+
+    /**
+     * Removes all the commented code from a List of Strings.
+     *
+     * @param lines the List of lines
+     * @return the String value of the code.
+     */
+    static String removeCommentedCode(final List<String> lines) {
         final String currentLineComment = "//";
         final String greedyCommentStart = "/*";
         final String greedyCommentEnd = "*/";
-        final Pattern pattern = Pattern.compile(regex);
+        final Pattern pattern = getGreedyCommentBlockPattern();
 
         final StringBuilder stringBuilder = new StringBuilder();
-        try (final FileInputStream fileInputStream = new FileInputStream(path)) {
-            final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(fileInputStream));
-            String line;
-            boolean isGreedyCommented = false;
-            while ((line = bufferedReader.readLine()) != null) {
-                String reducedLine = removeGreedyCommentBlocksFromLine(line, pattern);
+        boolean isGreedyCommented = false;
+        for (final String line : lines) {
+            String reducedLine = removeGreedyCommentBlocksFromLine(line, pattern);
 
-                final int gceIndex = reducedLine.indexOf(greedyCommentEnd);
-                if (gceIndex >= 0) {
-                    reducedLine = reducedLine.substring(reducedLine.indexOf(greedyCommentEnd));
-                    isGreedyCommented = false;
-                } else {
-                    if (isGreedyCommented) {
-                        continue;
-                    }
+            final int gceIndex = reducedLine.indexOf(greedyCommentEnd);
+            if (gceIndex >= 0) {
+                reducedLine = reducedLine.substring(reducedLine.indexOf(greedyCommentEnd) + greedyCommentEnd.length());
+                isGreedyCommented = false;
+            } else {
+                if (isGreedyCommented) {
+                    continue;
                 }
+            }
 
-                final int clcIndex = reducedLine.indexOf(currentLineComment);
-                final int gcsIndex = reducedLine.indexOf(greedyCommentStart);
-                final int csIndex = getSmallestPositiveNumber(clcIndex, gcsIndex);
+            final int clcIndex = reducedLine.indexOf(currentLineComment);
+            final int gcsIndex = reducedLine.indexOf(greedyCommentStart);
+            final int csIndex = getSmallestNonNegativeNumber(clcIndex, gcsIndex);
+            if (csIndex >= 0) {
                 if (csIndex == gcsIndex) {
                     isGreedyCommented = true;
                 }
-                stringBuilder.append(reducedLine);
-
+                reducedLine = reducedLine.substring(0, csIndex);
             }
+
+            stringBuilder.append(reducedLine).append("\n");
         }
         return stringBuilder.toString();
     }
@@ -472,7 +480,7 @@ public class InjectTraceTask extends DefaultTask {
      * @param pattern the Pattern to use for removing.
      * @return the line without greedy comment blocks.
      */
-    private String removeGreedyCommentBlocksFromLine(final String line, final Pattern pattern) {
+    static String removeGreedyCommentBlocksFromLine(final String line, final Pattern pattern) {
         final Matcher matcher = pattern.matcher(line);
         if (matcher.find()) {
             return matcher.replaceAll("");
@@ -481,12 +489,22 @@ public class InjectTraceTask extends DefaultTask {
     }
 
     /**
-     * Gets the smallest positive number from the given numbers.
+     * Gets the Pattern for getting greedy comment blocks.
+     *
+     * @return the compiled pattern.
+     */
+    static Pattern getGreedyCommentBlockPattern() {
+        final String regex = "/\\*.*?\\*/";
+        return Pattern.compile(regex);
+    }
+
+    /**
+     * Gets the smallest non-negative number from the given numbers.
      *
      * @param numbers the numbers.
-     * @return the smallest positive number.
+     * @return the smallest non-negative number, or -1 if there is no positive.
      */
-    private int getSmallestPositiveNumber(final int... numbers) {
+    static int getSmallestNonNegativeNumber(final int... numbers) {
         return Arrays.stream(numbers).filter(i -> i >= 0).min().orElse(-1);
     }
     //endregion
