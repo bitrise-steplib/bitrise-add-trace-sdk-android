@@ -4,3 +4,4 @@
 _tmp
 local.properties
 .gradle
+build/

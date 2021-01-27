@@ -20,13 +20,22 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.inject.Inject;
+
 /**
  * Task will inject the required gradle file changes to add Trace to the given Android application. For the versions
  * see 'traceSdk.gradle' and {@link #TRACE_GRADLE_PLUGIN_VERSION}.
  */
 public class InjectTraceTask extends DefaultTask {
 
-    private final Logger logger = getProject().getLogger();
+    // TODO improve logging
+    static Logger logger;
+
+    @Inject
+    public InjectTraceTask() {
+        super();
+        logger = getProject().getLogger();
+    }
 
     //region Constants
     /**
@@ -137,7 +146,7 @@ public class InjectTraceTask extends DefaultTask {
      * @param appModule the given Project.
      * @return {@code true} if it has, {@code false} otherwise.
      */
-    public boolean hasTraceSdkDependency(final Project appModule) {
+    private boolean hasTraceSdkDependency(final Project appModule) {
         for (final Configuration configuration : appModule.getConfigurations()) {
             final String configurationNameLc = configuration.getName().toLowerCase();
             if (configurationNameLc.contains("compileclasspath") || configurationNameLc.contains("runtimeclasspath")) {
@@ -191,7 +200,7 @@ public class InjectTraceTask extends DefaultTask {
      * @param appModule the given Project.
      * @return {@code true} if it has, {@code false} otherwise.
      */
-    public boolean hasTraceGradlePluginDependency(final Project appModule) {
+    private boolean hasTraceGradlePluginDependency(final Project appModule) {
         for (final Configuration configuration : appModule.getBuildscript().getConfigurations()) {
             if (hasDependency(configuration, TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME,
                     TRACE_GRADLE_PLUGIN_DEPENDENCY_GROUP_NAME)) {
@@ -250,7 +259,7 @@ public class InjectTraceTask extends DefaultTask {
      * @throws IOException when any I/O error occurs with the file on the buildGradlePath.
      */
     private void insertDependencyWithBuildScriptClosure(final String buildGradlePath) throws IOException {
-        final String buildscriptClosure = "buildscript {\n" +
+        final String buildscriptClosure = "\nbuildscript {\n" +
                 "    %s\n" +
                 "    repositories {\n" +
                 "        jcenter()\n" +
@@ -309,7 +318,7 @@ public class InjectTraceTask extends DefaultTask {
      * @param appModule the given Project.
      * @return {@code true} if it is, {@code false} otherwise.
      */
-    public boolean isTraceGradlePluginApplied(final Project appModule) {
+    private boolean isTraceGradlePluginApplied(final Project appModule) {
         return appModule.getPlugins().hasPlugin(TRACE_GRADLE_PLUGIN_DEPENDENCY_GROUP_NAME);
     }
 
@@ -334,7 +343,7 @@ public class InjectTraceTask extends DefaultTask {
      * @param envName the name of the environment variable.
      * @return the value of the environment variable.
      */
-    private String getEnv(final String envName) {
+    private static String getEnv(final String envName) {
         final String env = System.getenv(envName);
         if (env == null) {
             throw new IllegalStateException(
@@ -350,7 +359,7 @@ public class InjectTraceTask extends DefaultTask {
      * @param appModuleDir the path of the {@link Project} of the Android application.
      * @throws IOException when any I/O error occurs with the files on the path.
      */
-    private void copyGradleFile(final String appModuleDir, final String buildFileName) throws IOException {
+    private static void copyGradleFile(final String appModuleDir, final String buildFileName) throws IOException {
         final Path traceSdkGradleFilePath = Paths.get(getEnv(BITRISE_STEP_SRC_ENV) + "/" + buildFileName);
         final Path destinationPath = Paths.get(appModuleDir + "/" + buildFileName);
         Files.copy(traceSdkGradleFilePath, destinationPath);
@@ -363,7 +372,7 @@ public class InjectTraceTask extends DefaultTask {
      * @param buildFileName      the given Gradle build file path to apply.
      * @throws IOException when any I/O error occurs with the file on the path.
      */
-    private void appendTraceDependency(final String appBuildGradlePath, final String buildFileName) throws IOException {
+    private static void appendTraceDependency(final String appBuildGradlePath, final String buildFileName) throws IOException {
         appendContentToFile(appBuildGradlePath, getContentToAppend(appBuildGradlePath, buildFileName));
     }
 
@@ -374,7 +383,7 @@ public class InjectTraceTask extends DefaultTask {
      * @param content the content to append.
      * @throws IOException when any I/O error occurs with the file on the path.
      */
-    private void appendContentToFile(final String path, final String content) throws IOException {
+    private static void appendContentToFile(final String path, final String content) throws IOException {
         Files.write(Paths.get(path), content.getBytes(), StandardOpenOption.APPEND);
     }
 
@@ -386,7 +395,7 @@ public class InjectTraceTask extends DefaultTask {
      * @param buildFileName      the given Gradle build file path to apply.
      * @return the content to append to the Gradle build file.
      */
-    private String getContentToAppend(final String appBuildGradlePath, final String buildFileName) {
+    static String getContentToAppend(final String appBuildGradlePath, final String buildFileName) {
         if (appBuildGradlePath.endsWith(".kts")) {
             return String.format("\napply(\"%s\")", buildFileName);
         } else if (appBuildGradlePath.endsWith(".gradle")) {
@@ -405,7 +414,7 @@ public class InjectTraceTask extends DefaultTask {
      * @param dependencyGroupName the group of the dependency to check for.
      * @return {@code true} if it has, {@code false} otherwise.
      */
-    public boolean hasDependency(final Configuration configuration, final String dependencyName,
+    static boolean hasDependency(final Configuration configuration, final String dependencyName,
                                  final String dependencyGroupName) {
         for (final Dependency dependency : configuration.getAllDependencies()) {
             if (dependency.getName().equals(dependencyName) &&
@@ -426,7 +435,7 @@ public class InjectTraceTask extends DefaultTask {
      * @return the String value of the code.
      * @throws IOException when any I/O error occurs with the file on the path.
      */
-    private String getCodeContent(final String path) throws IOException {
+    private static String getCodeContent(final String path) throws IOException {
         final List<String> lines = Files.readAllLines(new File(path).toPath());
         return removeCommentedCode(lines);
     }

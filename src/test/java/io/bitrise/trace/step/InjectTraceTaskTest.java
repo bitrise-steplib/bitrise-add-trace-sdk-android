@@ -1,17 +1,30 @@
 package io.bitrise.trace.step;
 
+import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.internal.artifacts.DefaultDependencySet;
+import org.gradle.api.internal.artifacts.configurations.DefaultConfiguration;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Test cases for {@link InjectTraceTask}.
  */
 public class InjectTraceTaskTest {
+
+    @BeforeClass
+    public static void setup() {
+        InjectTraceTask.logger = LoggerFactory.getLogger(InjectTraceTaskTest.class.getName());
+    }
 
     //region getSmallestNonNegativeNumber tests
     @Test
@@ -228,7 +241,7 @@ public class InjectTraceTaskTest {
             add(STRING_CONTENT);
         }};
         final String actual = InjectTraceTask.removeCommentedCode(codeLines);
-        final String expected = String.format("\n\n%1$s\n", STRING_CONTENT);
+        final String expected = String.format("\n%1$s\n%1$s\n", STRING_CONTENT);
         assertThat(actual, equalTo(expected));
     }
 
@@ -236,7 +249,7 @@ public class InjectTraceTaskTest {
     @Test
     public void removeCommentedCode_mixedCommentInSameLine3() {
         final ArrayList<String> codeLines = new ArrayList<String>() {{
-            add( GREEDY_COMMENT_START +  STRING_CONTENT  +GREEDY_COMMENT_END + STRING_CONTENT + LINE_COMMENT+ STRING_CONTENT);
+            add(GREEDY_COMMENT_START + STRING_CONTENT + GREEDY_COMMENT_END + STRING_CONTENT + LINE_COMMENT + STRING_CONTENT);
             add(STRING_CONTENT);
             add(STRING_CONTENT);
         }};
@@ -272,6 +285,66 @@ public class InjectTraceTaskTest {
         final String actual = InjectTraceTask.removeCommentedCode(codeLines);
         final String expected = String.format("\n%1$s\n", STRING_CONTENT);
         assertThat(actual, equalTo(expected));
+    }
+    //endregion
+
+    //region hasDependency tests
+    private final static String DUMMY_DEPENDENCY_NAME = "dummy-dependency";
+    private final static String DUMMY_DEPENDENCY_GROUP_NAME = "io.bitrise.dummy";
+    private final static Dependency DUMMY_DEPENDENCY = mock(Dependency.class);
+
+    static {
+        when(DUMMY_DEPENDENCY.getName()).thenReturn(DUMMY_DEPENDENCY_NAME);
+        when(DUMMY_DEPENDENCY.getGroup()).thenReturn(DUMMY_DEPENDENCY_GROUP_NAME);
+    }
+
+    @Test
+    public void hasDependency_True() {
+        final DefaultConfiguration mockConfiguration = mock(DefaultConfiguration.class);
+        final DefaultDependencySet mockDependencySet = mock(DefaultDependencySet.class);
+        when(mockDependencySet.iterator()).thenReturn(Collections.singletonList(DUMMY_DEPENDENCY).iterator());
+        when(mockConfiguration.getAllDependencies()).thenReturn(mockDependencySet);
+
+        final boolean actualValue = InjectTraceTask.hasDependency(mockConfiguration, DUMMY_DEPENDENCY_NAME,
+                DUMMY_DEPENDENCY_GROUP_NAME);
+        assertThat(actualValue, is(true));
+    }
+
+    @Test
+    public void hasDependency_False() {
+        final DefaultConfiguration mockConfiguration = mock(DefaultConfiguration.class);
+        final DefaultDependencySet mockDependencySet = mock(DefaultDependencySet.class);
+        final Dependency someOtherDependency = mock(Dependency.class);
+        when(someOtherDependency.getName()).thenReturn(DUMMY_DEPENDENCY_NAME);
+        when(someOtherDependency.getGroup()).thenReturn("not.bitrise.group");
+
+        when(mockDependencySet.iterator()).thenReturn(Collections.singletonList(someOtherDependency).iterator());
+        when(mockConfiguration.getAllDependencies()).thenReturn(mockDependencySet);
+
+        final boolean actualValue = InjectTraceTask.hasDependency(mockConfiguration, DUMMY_DEPENDENCY_NAME,
+                DUMMY_DEPENDENCY_GROUP_NAME);
+        assertThat(actualValue, is(false));
+    }
+    //endregion
+
+    //region getContentToAppend tests
+    private static final String DUMMY_GRADLE_FILE_NAME = "dummy.gradle";
+
+    @Test
+    public void getContentToAppend_Groovy() {
+        final String actual = InjectTraceTask.getContentToAppend("build.gradle", DUMMY_GRADLE_FILE_NAME);
+        assertThat(actual, equalTo(String.format("\napply from: \"%s\"", DUMMY_GRADLE_FILE_NAME)));
+    }
+
+    @Test
+    public void getContentToAppend_Kotlin() {
+        final String actual = InjectTraceTask.getContentToAppend("build.gradle.kts", DUMMY_GRADLE_FILE_NAME);
+        assertThat(actual, equalTo(String.format("\napply(\"%s\")", DUMMY_GRADLE_FILE_NAME)));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void getContentToAppend_None() {
+        InjectTraceTask.getContentToAppend("README.md", DUMMY_GRADLE_FILE_NAME);
     }
     //endregion
 }
