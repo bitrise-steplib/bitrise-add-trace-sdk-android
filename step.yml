@@ -3,7 +3,37 @@ title: |-
 summary: |
   Adds the Trace SDK to the given Android application.
 description: |
-  Adds the Trace SDK to the given Android application.
+  # Overview
+
+  Ensures that Trace SDK (trace-android-sdk) is added to a given Android application project. Adds the required
+  dependency (trace-sdk) and applies plugin (trace-gradle-plugin) if project not already have them. This step is needed,
+  when you have not added TRACE SDK manually to your project. For manual installation see the linked documentation.
+
+  **Use this step before your application is built.**
+
+  For the known limitations of trace-android-sdk please see the README.md file.
+
+  # Documentation
+
+  www.bitrise.io:
+  [https://devcenter.bitrise.io/monitoring/getting-started-with-trace/](https://devcenter.bitrise.io/monitoring/getting-started-with-trace/)
+
+  # About Trace
+
+  **Trace:** [https://trace.bitrise.io](https://trace.bitrise.io)
+
+  **What's Trace?** [https://www.bitrise.io/add-ons/trace-mobile-monitoring](https://www.bitrise.io/add-ons/trace-mobile-monitoring)
+
+  **Getting started guide:** [https://trace.bitrise.io/o/getting-started](https://trace.bitrise.io/o/getting-started)
+
+  # iOS
+
+  **For iOS, please check this step:**
+  [https://www.bitrise.io/integrations/steps/add-trace-sdk](https://www.bitrise.io/integrations/steps/add-trace-sdk)
+
+  **Source for iOS step:**
+  [https://github.com/bitrise-steplib/bitrise-step-add-trace-sdk](https://github.com/bitrise-steplib/bitrise-step-add-trace-sdk)
+
 website: https://github.com/bitrise-steplib/bitrise-step-add-trace-sdk-android
 source_code_url: https://github.com/bitrise-steplib/bitrise-step-add-trace-sdk-android
 support_url: https://github.com/bitrise-steplib/bitrise-step-add-trace-sdk-android/issues
@@ -12,7 +42,7 @@ host_os_tags:
   - ubuntu-16.04
 
 project_type_tags:
-   - android
+  - android
 
 type_tags:
   - utility
@@ -24,11 +54,11 @@ run_if: ""
 
 deps:
   brew:
-  - name: git
-  - name: wget
+    - name: git
+    - name: wget
   apt_get:
-  - name: git
-  - name: wget
+    - name: git
+    - name: wget
 
 toolkit:
   go:
