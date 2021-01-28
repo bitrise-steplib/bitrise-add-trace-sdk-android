@@ -76,7 +76,7 @@ func addTaskFile(stepDir, projDir string) error {
 	return out.Close()
 }
 
-// Runs the TraceInjectorTask.
+// Runs the TraceInjectorTask. This will inject the required dependencies and apply the plugin for Trace.
 func runTraceInjector(rootDir, options string) error {
 	optionSlice, err := shellquote.Split(options)
 	if err != nil {
@@ -100,12 +100,8 @@ func runTraceInjector(rootDir, options string) error {
 	cmd.Stderr = &stdErr
 	e := cmd.Run()
 	if e != nil {
-		return fmt.Errorf("io.bitrise.trace.step.InjectTraceTask failed. Error: %s\nConsole output: %s\nError output: %s", e, stdOut.String(), stdErr.String())
+		return fmt.Errorf("InjectTraceTask failed. Error: %s\nConsole output: %s\nError output: %s", e, stdOut.String(), stdErr.String())
 	}
 
 	return nil
-}
-
-func printCommand(cmd *exec.Cmd) {
-	fmt.Printf("==> Executing: %s\n", strings.Join(cmd.Args, " "))
 }

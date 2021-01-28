@@ -19,6 +19,7 @@ const configFileVersion = "1.0.0"
 
 // Injector Gradle task values
 const injectTraceTaskName = "injectTraceTask"
+const verifyTraceTaskName = "verifyTrace"
 const injectTraceTaskClassName = "io.bitrise.trace.step.InjectTraceTask"
 const injectTraceTaskFileSrcPath = "src/main/java/io/bitrise/trace/step/InjectTraceTask.java"
 const injectTraceTaskFileDstPath = "buildSrc/src/main/java/io/bitrise/trace/step/InjectTraceTask.java"
