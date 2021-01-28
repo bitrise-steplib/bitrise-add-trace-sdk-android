@@ -28,7 +28,6 @@ import javax.inject.Inject;
  */
 public class InjectTraceTask extends DefaultTask {
 
-    // TODO improve logging
     static Logger logger;
 
     @Inject
@@ -110,9 +109,14 @@ public class InjectTraceTask extends DefaultTask {
      */
     private Project getApplicationModule(final Set<Project> projectSet) {
         for (final Project project : projectSet) {
+            final String projectName = project.getName();
+            logger.debug("Checking project \"{}\" if it is an Android application", projectName);
             if (project.getPlugins().hasPlugin("com.android.application")) {
+                logger.info("Project \"{}\" is an Android application! Task will ensure it has all the required Trace" +
+                        " dependencies", projectName);
                 return project;
             }
+            logger.debug("Project \"{}\" is not an Android application!", projectName);
         }
         throw new IllegalStateException("No module with \"com.android.application\" plugin found. You must have at " +
                 "least one Android application module in your project to install Trace SDK!");
@@ -129,30 +133,31 @@ public class InjectTraceTask extends DefaultTask {
      */
     private void ensureTraceSdkDependency(final Project appModule) throws IOException {
         if (hasTraceSdkDependency(appModule)) {
-            logger.info("Project \"{}\" already has dependency on \"{}\", skipping injecting the dependency. Please " +
-                            "make sure that in your build.gradle files the dependency is defined for all the required" +
-                            "configurations! For more information please check the README.md of \"trace-android-sdk\"",
-                    appModule.getName(), TRACE_SDK_DEPENDENCY_NAME);
+            logger.info("Skipping injecting the dependency. Please make sure that in your build.gradle files the " +
+                    "dependency is defined for all the required configurations! For more information please " +
+                    "check the README.md of \"trace-android-sdk\"");
         } else {
+            logger.info("Adding dependency on  \"{}\" for project \"{}\".", TRACE_SDK_DEPENDENCY_NAME,
+                    appModule.getName());
             addTraceSdkDependency(appModule);
         }
     }
 
     /**
      * Checks if the given {@link Project} has dependency on {@link #TRACE_SDK_DEPENDENCY_NAME} or not. If any
-     * {@link org.gradle.api.artifacts.Configuration} that should have it as a dependency do not have it, {@code
-     * false} is returned.
+     * {@link org.gradle.api.artifacts.Configuration} that should have it as a dependency do have it, {@code true} is
+     * returned.
      *
      * @param appModule the given Project.
      * @return {@code true} if it has, {@code false} otherwise.
      */
     private boolean hasTraceSdkDependency(final Project appModule) {
         for (final Configuration configuration : appModule.getConfigurations()) {
+            logger.debug("Checking configuration \"{}\" for dependency on \"{}\".", configuration.getName(),
+                    TRACE_SDK_DEPENDENCY_NAME);
             final String configurationNameLc = configuration.getName().toLowerCase();
             if (configurationNameLc.contains("compileclasspath") || configurationNameLc.contains("runtimeclasspath")) {
-                final boolean hasSdk = hasDependency(configuration, TRACE_SDK_DEPENDENCY_NAME,
-                        TRACE_SDK_DEPENDENCY_GROUP_NAME);
-                if (hasSdk) {
+                if (hasDependency(configuration, TRACE_SDK_DEPENDENCY_NAME, TRACE_SDK_DEPENDENCY_GROUP_NAME)) {
                     return true;
                 }
             }
@@ -183,11 +188,12 @@ public class InjectTraceTask extends DefaultTask {
      */
     private void ensureTraceGradlePluginDependency(final Project appModule) throws IOException {
         if (hasTraceGradlePluginDependency(appModule)) {
-            logger.info("Project \"{}\" already has dependency on \"{}\", skipping injecting the dependency. Please " +
-                            "make sure that in your build.gradle files the dependency is defined for all the required" +
-                            "configurations! For more information please check the README.md of \"trace-android-sdk\"",
-                    appModule.getName(), TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME);
+            logger.info("Skipping injecting the dependency. Please make sure that in your build.gradle files the " +
+                    "dependency is defined for all the required configurations! For more information please " +
+                    "check the README.md of \"trace-android-sdk\"");
         } else {
+            logger.info("Adding dependency on  \"{}\" for project \"{}\".", TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME,
+                    appModule.getName());
             addTraceGradlePluginDependency(appModule.getBuildFile().getPath());
         }
     }
@@ -221,13 +227,14 @@ public class InjectTraceTask extends DefaultTask {
         if (updateBuildScriptContent(buildGradlePath)) {
             logger.info("Updated buildscript block of \"{}\".", buildGradlePath);
         } else {
+            logger.debug(" \"{}\" does not have buldscript block, adding it.", buildGradlePath);
             insertDependencyWithBuildScriptClosure(buildGradlePath);
         }
     }
 
     /**
      * When adding {@link #TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME} to the given project and it does have a buildscript
-     * block in it's build.gradle, this methodpdates the buildscript closure. Injects the dependency on the
+     * block in it's build.gradle, this method updates the buildscript closure. Injects the dependency on the
      * {@link #TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME} and adds JCenter as repository. If the buildscript closure is not
      * present does nothing and returns {@code false}.
      *
@@ -243,6 +250,7 @@ public class InjectTraceTask extends DefaultTask {
         if (matcher.find()) {
             final String updatedContent = matcher.replaceFirst(getUpdatedBuildScriptContent());
             try (final FileWriter fileWriter = new FileWriter(path, false)) {
+                logger.debug("Updating \"{}\" with new content: \n\"{}\"", path, updatedContent);
                 fileWriter.append(updatedContent);
             }
             return true;
@@ -312,7 +320,7 @@ public class InjectTraceTask extends DefaultTask {
     }
 
     /**
-     * Checks if the given {@link Project} has the  {@link #TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME} applied as a plugin or
+     * Checks if the given {@link Project} has the {@link #TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME} applied as a plugin or
      * not.
      *
      * @param appModule the given Project.
@@ -350,6 +358,7 @@ public class InjectTraceTask extends DefaultTask {
                     String.format("%s is not set as env variable, aborting build. Please set it " +
                             "as env variable before running this step", envName));
         }
+        logger.debug("Environment variable \"{}\" is present with value \"{}\".", envName, env);
         return env;
     }
 
@@ -363,6 +372,7 @@ public class InjectTraceTask extends DefaultTask {
         final Path traceSdkGradleFilePath = Paths.get(getEnv(BITRISE_STEP_SRC_ENV) + "/" + buildFileName);
         final Path destinationPath = Paths.get(appModuleDir + "/" + buildFileName);
         Files.copy(traceSdkGradleFilePath, destinationPath);
+        logger.debug("Copied \"{}\" to \"{}\".", traceSdkGradleFilePath, destinationPath);
     }
 
     /**
@@ -372,7 +382,8 @@ public class InjectTraceTask extends DefaultTask {
      * @param buildFileName      the given Gradle build file path to apply.
      * @throws IOException when any I/O error occurs with the file on the path.
      */
-    private static void appendTraceDependency(final String appBuildGradlePath, final String buildFileName) throws IOException {
+    private static void appendTraceDependency(final String appBuildGradlePath, final String buildFileName)
+            throws IOException {
         appendContentToFile(appBuildGradlePath, getContentToAppend(appBuildGradlePath, buildFileName));
     }
 
@@ -384,6 +395,7 @@ public class InjectTraceTask extends DefaultTask {
      * @throws IOException when any I/O error occurs with the file on the path.
      */
     private static void appendContentToFile(final String path, final String content) throws IOException {
+        logger.debug("Appending to \"{}\" content:\n\"{}\"", path, content);
         Files.write(Paths.get(path), content.getBytes(), StandardOpenOption.APPEND);
     }
 
@@ -397,8 +409,10 @@ public class InjectTraceTask extends DefaultTask {
      */
     static String getContentToAppend(final String appBuildGradlePath, final String buildFileName) {
         if (appBuildGradlePath.endsWith(".kts")) {
+            logger.debug("\"{}\" is a Kotlin file.", appBuildGradlePath);
             return String.format("\napply(\"%s\")", buildFileName);
         } else if (appBuildGradlePath.endsWith(".gradle")) {
+            logger.debug("\"{}\" is a Groovy file.", appBuildGradlePath);
             return String.format("\napply from: \"%s\"", buildFileName);
         } else {
             throw new IllegalStateException(String.format("Could not determine language for %s",
@@ -425,6 +439,8 @@ public class InjectTraceTask extends DefaultTask {
                 return true;
             }
         }
+        logger.info("Configuration \"{}\" does not have a dependency on \"{}:{}\".", configuration.getName(),
+                dependencyGroupName, dependencyName);
         return false;
     }
 
@@ -455,14 +471,17 @@ public class InjectTraceTask extends DefaultTask {
         final StringBuilder stringBuilder = new StringBuilder();
         boolean isGreedyCommented = false;
         for (final String line : lines) {
+            logger.debug("Removing comments from line \"{}\"", line);
             String reducedLine = removeGreedyCommentBlocksFromLine(line, pattern);
-
+            logger.debug("Removed complete greedy comments: \"{}\"", reducedLine);
             final int gceIndex = reducedLine.indexOf(greedyCommentEnd);
             if (gceIndex >= 0) {
                 reducedLine = reducedLine.substring(reducedLine.indexOf(greedyCommentEnd) + greedyCommentEnd.length());
                 isGreedyCommented = false;
+                logger.debug("Removed greedy comment ends: \"{}\"", reducedLine);
             } else {
                 if (isGreedyCommented) {
+                    logger.debug("Skipping full line as it is greedy commented.");
                     continue;
                 }
             }
@@ -475,6 +494,7 @@ public class InjectTraceTask extends DefaultTask {
                     isGreedyCommented = true;
                 }
                 reducedLine = reducedLine.substring(0, csIndex);
+                logger.debug("Removed greedy comment starts and line comments: \"{}\"", reducedLine);
             }
 
             stringBuilder.append(reducedLine).append("\n");
