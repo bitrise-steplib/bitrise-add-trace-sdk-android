@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/kballard/go-shellquote"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -23,9 +22,6 @@ func appendTraceInjectorTaskToProject(path string) error {
 	defer func() {
 		err = f.Close()
 	}()
-	if err != nil {
-		return err
-	}
 
 	c, err := getTraceInjectorTaskContent(path)
 	if err != nil {
@@ -33,7 +29,7 @@ func appendTraceInjectorTaskToProject(path string) error {
 	}
 
 	if _, err := f.WriteString(c); err != nil {
-		log.Println(err)
+		return fmt.Errorf("failed to write content \"%s\" to file. Reason: %s", c, err)
 	}
 	return nil
 }
@@ -59,9 +55,6 @@ func addTaskFile(stepDir, projDir string) error {
 	defer func() {
 		err = in.Close()
 	}()
-	if err != nil {
-		return err
-	}
 
 	dst := path.Join(projDir, injectTraceTaskFileDstPath)
 	e := os.MkdirAll(filepath.Dir(dst), os.ModePerm)
@@ -75,9 +68,6 @@ func addTaskFile(stepDir, projDir string) error {
 	defer func() {
 		err = out.Close()
 	}()
-	if err != nil {
-		return err
-	}
 
 	_, err = io.Copy(out, in)
 	if err != nil {
