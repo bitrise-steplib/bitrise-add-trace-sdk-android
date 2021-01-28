@@ -35,24 +35,20 @@ toolkit:
     package_name: github.com/bitrise-steplib/bitrise-step-add-trace-sdk-android
 
 inputs:
-  - example_step_input: Default Value - you can leave this empty if you want to
+  - gradle_options:
     opts:
-      title: "Example Step Input"
-      summary: Summary. No more than 2-3 sentences.
+      title: "Gradle Task Options"
+      summary: Additional task options for "injectTrace" and "verifyTrace" tasks
       description: |
-        Description of this input.
+        Step uses a Gradle task called "injectTrace" to add the required dependencies to the project. Also uses
+        "verifyTrace" to verify "injectTrace". For debugging purposes you may want to add additional flags to them, it
+        would display useful information if you have any issue with the step.
 
-        Can be Markdown formatted text.
+        Examples: "--stactrace", "--info" or "--debug" (without the quote marks).
+
+        Note: Multiple entries should be separated with a whitespace character.
+
+        Example: "--stacktrace --info" (without the quote marks).
       is_expand: true
-      is_required: true
+      is_required: false
       value_options: []
-
-outputs:
-  - EXAMPLE_STEP_OUTPUT:
-    opts:
-      title: "Example Step Output"
-      summary: Summary. No more than 2-3 sentences.
-      description: |
-        Description of this output.
-
-        Can be Markdown formatted text.

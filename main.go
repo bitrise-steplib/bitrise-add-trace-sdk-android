@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/bitrise-io/go-utils/log"
 	"os"
 	"path"
+
+	"github.com/bitrise-io/go-steputils/stepconf"
+	"github.com/bitrise-io/go-utils/log"
 )
 
 // Called when the main function should be terminated with failure.
@@ -14,6 +16,10 @@ func failf(format string, v ...interface{}) {
 }
 
 func main() {
+	var configs Configs
+	if err := stepconf.Parse(&configs); err != nil {
+		failf("Issue with input: %s", err)
+	}
 	log.Infof("Creating the configuration file")
 	if err := createConfigurationFile(); err != nil {
 		failf("Could not create the config file, aborting build. Reason: %s\n", err)
@@ -27,7 +33,7 @@ func main() {
 	log.Infof("Added Trace injector to project")
 
 	log.Infof("Running Trace injector on project")
-	if err := runTraceInjector(); err != nil {
+	if err := runTraceInjector(configs.GradleOptions); err != nil {
 		failf("Error when injecting Trace to project, aborting build. Reason: %s\n", err)
 	}
 	log.Infof("Trace injector successfully injected the SDK")

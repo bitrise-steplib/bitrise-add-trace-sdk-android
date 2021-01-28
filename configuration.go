@@ -28,6 +28,11 @@ const injectTraceTaskFileDstPath = "buildSrc/src/main/java/io/bitrise/trace/step
 const kotlinBuildGradleSuffix = ".gradle.kts"
 const groovyBuildGradleSuffix = ".gradle"
 
+// Configs stores the step's inputs
+type Configs struct {
+	GradleOptions string `env:"gradle_options"`
+}
+
 func projectDir() (string, error) {
 	src, err := env(srcDirEnvName)
 	if err != nil {

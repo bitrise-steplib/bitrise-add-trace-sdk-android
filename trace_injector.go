@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/kballard/go-shellquote"
 	"io"
 	"log"
 	"os"
@@ -86,7 +87,12 @@ func addTaskFile(stepDir, projDir string) error {
 }
 
 // Runs the TraceInjectorTask.
-func runTraceInjector() error {
+func runTraceInjector(options string) error {
+	optionSlice, err := shellquote.Split(options)
+	if err != nil {
+		return fmt.Errorf("cannot parse Gradle Task Options, please make sure it is set correctly. Value: \"%s\". Error: %s ", options, err)
+	}
+
 	projDir, err := projectDir()
 	if err != nil {
 		return fmt.Errorf("cannot start injector task. Reason: %s", err)
@@ -94,7 +100,10 @@ func runTraceInjector() error {
 
 	var stdOut bytes.Buffer
 	var stdErr bytes.Buffer
-	cmd := exec.Command(path.Join(projDir, "./gradlew"), injectTraceTaskName, "-p", projDir)
+	cmdSlice := []string{path.Join(projDir, "./gradlew"), injectTraceTaskName, "-p", projDir}
+	cmdSlice = append(cmdSlice, optionSlice...)
+
+	cmd := exec.Command(cmdSlice[0], cmdSlice[1:]...)
 	printCommand(cmd)
 
 	cmd.Stdout = &stdOut
