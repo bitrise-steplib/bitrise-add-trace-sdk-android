@@ -65,6 +65,16 @@ toolkit:
     package_name: github.com/bitrise-steplib/bitrise-step-add-trace-sdk-android
 
 inputs:
+  - project_path: $BITRISE_SOURCE_DIR
+    opts:
+      title: "Path of the root project"
+      summary: Path of the root project
+      description: |
+        The path for the root project. By default it will be the source directory, but in some cases (for example if you
+        have a monorepo) you may want to specify which directory should be used for this step.
+
+        Example: $BITRISE_SOURCE_DIR/myproject1/
+      is_required: true
   - gradle_options:
     opts:
       title: "Gradle Task Options"
@@ -79,6 +89,4 @@ inputs:
         Note: Multiple entries should be separated with a whitespace character.
 
         Example: "--stacktrace --info" (without the quote marks).
-      is_expand: true
       is_required: false
-      value_options: []

@@ -87,13 +87,13 @@ func addTaskFile(stepDir, projDir string) error {
 }
 
 // Runs the TraceInjectorTask.
-func runTraceInjector(options string) error {
+func runTraceInjector(rootDir, options string) error {
 	optionSlice, err := shellquote.Split(options)
 	if err != nil {
 		return fmt.Errorf("cannot parse Gradle Task Options, please make sure it is set correctly. Value: \"%s\". Error: %s ", options, err)
 	}
 
-	projDir, err := projectDir()
+	projDir, err := projectDir(rootDir)
 	if err != nil {
 		return fmt.Errorf("cannot start injector task. Reason: %s", err)
 	}

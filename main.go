@@ -21,19 +21,19 @@ func main() {
 		failf("Issue with input: %s", err)
 	}
 	log.Infof("Creating the configuration file")
-	if err := createConfigurationFile(); err != nil {
+	if err := createConfigurationFile(configs.RootProjectPath); err != nil {
 		failf("Could not create the config file, aborting build. Reason: %s\n", err)
 	}
 	log.Infof("Configuration file successfully created")
 
 	log.Infof("Adding Trace injector to project")
-	if err := addTraceInjectorTask(); err != nil {
+	if err := addTraceInjectorTask(configs.RootProjectPath); err != nil {
 		failf("Could not add Trace injector to project, aborting build. Reason: %s\n", err)
 	}
 	log.Infof("Added Trace injector to project")
 
 	log.Infof("Running Trace injector on project")
-	if err := runTraceInjector(configs.GradleOptions); err != nil {
+	if err := runTraceInjector(configs.RootProjectPath, configs.GradleOptions); err != nil {
 		failf("Error when injecting Trace to project, aborting build. Reason: %s\n", err)
 	}
 	log.Infof("Trace injector successfully injected the SDK")
@@ -42,8 +42,8 @@ func main() {
 }
 
 // Creates the configuration file for the given Android project. The configuration file has the required properties for
-// building the Android application.
-func createConfigurationFile() error {
+// building the Android application. Requires the root directory of the project as an input.
+func createConfigurationFile(rootDir string) error {
 	c, err := getConfigFileContent()
 	if err != nil {
 		return err
@@ -54,7 +54,7 @@ func createConfigurationFile() error {
 		return err
 	}
 
-	src, err := projectDir()
+	src, err := projectDir(rootDir)
 	if err != nil {
 		return err
 	}
@@ -62,8 +62,9 @@ func createConfigurationFile() error {
 	return createConfigFile(fc, p)
 }
 
-func addTraceInjectorTask() error {
-	projSrc, err := projectDir()
+// Adds the InjectTraceTask to the given project. Requires the root directory of the project as an input.
+func addTraceInjectorTask(rootDir string) error {
+	projSrc, err := projectDir(rootDir)
 	if err != nil {
 		return err
 	}

@@ -8,7 +8,6 @@ import (
 
 // Environment variables
 const apmTokenEnvName = "APM_COLLECTOR_TOKEN"
-const srcDirEnvName = "BITRISE_SOURCE_DIR"
 const projectDirEnvName = "BITRISEIO_GIT_REPOSITORY_SLUG"
 const stepSrcDirEnvName = "BITRISE_STEP_SOURCE_DIR"
 
@@ -30,15 +29,12 @@ const groovyBuildGradleSuffix = ".gradle"
 
 // Configs stores the step's inputs
 type Configs struct {
-	GradleOptions string `env:"gradle_options"`
+	RootProjectPath string `env:"project_path"`
+	GradleOptions   string `env:"gradle_options"`
 }
 
-func projectDir() (string, error) {
-	src, err := env(srcDirEnvName)
-	if err != nil {
-		return "", err
-	}
-
+// Returns the directory for the Android application.
+func projectDir(src string) (string, error) {
 	pDir, err := env(projectDirEnvName)
 	if err != nil {
 		return "", err
@@ -46,6 +42,7 @@ func projectDir() (string, error) {
 	return path.Join(src, pDir), nil
 }
 
+// Gets an environment variable, throws error when it is not present.
 func env(envName string) (string, error) {
 	env := os.Getenv(envName)
 	if env == "" {
