@@ -1,7 +1,50 @@
 # Add Trace SDK Android
 
-Adds the Trace SDK to the given Android application.
+## Overview
 
+Ensures that Trace SDK (trace-android-sdk) is added to a given Android application project. Adds the required
+dependency (trace-sdk) and applies plugin (trace-gradle-plugin) if project not already have them. This step is needed,
+when you have not added TRACE SDK manually to your project. For manual installation see the linked documentation.
+
+**Use this step before your application is built.**
+
+For the known limitations of trace-android-sdk please see the README.md file.
+
+## Tech details
+
+This step is a hybrid Go-Java step. Initially it will do the following:
+
+* Create/add to the Android project's buildSrc a Gradle task called InjectTraceTask
+
+* Append this task to the root build.gradle
+
+* Runs that task
+
+* The task will check your dependencies, ensures 'trace-sdk' is a dependency and 'trace-gradle-plugin' 
+is applied as a plugin
+
+* If needed, will add the dependencies and apply the plugin on your build.gradle files
+
+## Documentation
+
+www.bitrise.io:
+[https://devcenter.bitrise.io/monitoring/getting-started-with-trace/](https://devcenter.bitrise.io/monitoring/getting-started-with-trace/)
+
+## About Trace
+
+**Trace:** [https://trace.bitrise.io](https://trace.bitrise.io)
+
+**What's Trace?** [https://www.bitrise.io/add-ons/trace-mobile-monitoring](https://www.bitrise.io/add-ons/trace-mobile-monitoring)
+
+**Getting started guide:** [https://trace.bitrise.io/o/getting-started](https://trace.bitrise.io/o/getting-started)
+
+## iOS
+
+**For iOS, please check this step:**
+[https://www.bitrise.io/integrations/steps/add-trace-sdk](https://www.bitrise.io/integrations/steps/add-trace-sdk)
+
+**Source for iOS step:**
+[https://github.com/bitrise-steplib/bitrise-step-add-trace-sdk](https://github.com/bitrise-steplib/bitrise-step-add-trace-sdk)
 
 ## How to use this Step
 
