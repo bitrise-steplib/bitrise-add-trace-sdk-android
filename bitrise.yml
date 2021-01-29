@@ -24,7 +24,7 @@ workflows:
   # Integration test for creating the config file.
   test_config_file:
     envs:
-      - BITRISEIO_GIT_REPOSITORY_SLUG: sample-apps-android-sdk22
+      - BITRISEIO_GIT_REPOSITORY_SLUG: sample-ship-addon-android
     steps:
     - script:
         title: Initialise test
@@ -53,7 +53,7 @@ workflows:
         title: Clone test app
         inputs:
           - content: |
-              git clone --branch master https://github.com/bitrise-io/sample-apps-android-sdk22.git
+              git clone --branch main https://github.com/bitrise-io/sample-ship-addon-android.git
     - path::./:
         title: Step Test
         description: |-

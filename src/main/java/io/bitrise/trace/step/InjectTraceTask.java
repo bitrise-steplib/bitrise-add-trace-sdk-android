@@ -273,6 +273,7 @@ public class InjectTraceTask extends DefaultTask {
                 "    %s\n" +
                 "    repositories {\n" +
                 "        jcenter()\n" +
+                "        google()\n" +
                 "    }\n" +
                 "}";
         appendContentToFile(buildGradlePath, String.format(buildscriptClosure, getTraceGradlePluginDependency()));
