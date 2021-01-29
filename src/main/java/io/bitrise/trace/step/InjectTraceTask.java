@@ -286,7 +286,7 @@ public class InjectTraceTask extends DefaultTask {
      * @return the content that should be in the build.gradle.
      */
     private String getTraceGradlePluginDependency() {
-        return String.format("\ndependencies.add(\"classpath\", \"io.bitrise.trace.plugin:trace-gradle-plugin:%s\")",
+        return String.format("\ndependencies.add(\"classpath\", \"io.bitrise.trace.plugin:trace-gradle-plugin:%s\")\n",
                 TRACE_GRADLE_PLUGIN_VERSION);
     }
 
