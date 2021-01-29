@@ -79,7 +79,13 @@ func addTraceInjectorTask(rootDir string) error {
 	if err != nil {
 		return err
 	}
-	if err := appendTraceInjectorTaskToProject(path.Join(projSrc, "build.gradle")); err != nil {
+
+	gradlePath, err := findRootGradle(projSrc)
+	if err != nil {
+		return err
+	}
+
+	if err := appendTraceInjectorTaskToProject(gradlePath); err != nil {
 		return fmt.Errorf("failed to append Trace task to root build.gradle. Reason: %s", err)
 	}
 
@@ -91,6 +97,23 @@ func addTraceInjectorTask(rootDir string) error {
 		return fmt.Errorf("failed to add Trace injector task file to project. Reason: %s", err)
 	}
 	return nil
+}
+
+// Finds and returns the path for the root build.gradle or build.gradle.kts
+func findRootGradle(projectDir string) (string, error) {
+	groovyGradle := path.Join(projectDir, "build.gradle")
+	if _, err := os.Stat(groovyGradle); err == nil {
+		return groovyGradle, nil
+	}
+
+	kotlinGradle := path.Join(projectDir, "build.gradle.kts")
+	if _, err := os.Stat(kotlinGradle); err == nil {
+		return kotlinGradle, nil
+	}
+
+	return "", fmt.Errorf("could not find any suitable build gradle files in %s. Please make sure the input for "+
+		"project path is correctly set and there is a build.gradle or build.gradle.kts file", projectDir)
+
 }
 
 // Runs the VerifyTraceTask. This will verify the required dependencies and plugins are present for Trace.
