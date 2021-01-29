@@ -5,13 +5,14 @@ summary: |
 description: |
   # Overview
 
-  Ensures that Trace SDK (trace-android-sdk) is added to a given Android application project. Adds the required
-  dependency (trace-sdk) and applies plugin (trace-gradle-plugin) if project not already have them. This step is needed,
-  when you have not added TRACE SDK manually to your project. For manual installation see the linked documentation.
+  Ensures that Trace is added to a given Android application project. Adds the required
+  dependency (trace-sdk) and applies plugin (trace-gradle-plugin) if project not already have them.
+  This step is needed, when you have not added Trace manually to your project. For manual
+  installation see the linked documentation.
 
-  **Use this step before your application is built.**
+  **Use this step before your application is built/assembled with Gradle**
 
-  For the known limitations of trace-android-sdk please see the README.md file.
+  For the known limitations of trace-android-sdk please see the README.md file of it.
 
   # Documentation
 
@@ -81,8 +82,9 @@ inputs:
       summary: Additional task options for "injectTrace" and "verifyTrace" tasks
       description: |
         Step uses a Gradle task called "injectTrace" to add the required dependencies to the project. Also uses
-        "verifyTrace" to verify "injectTrace". For debugging purposes you may want to add additional flags to them, it
-        would display useful information if you have any issue with the step.
+        "verifyTrace" to verify Trace has been applied successfully to the project. For debugging
+        purposes you may want to add additional flags to them, it would display useful information
+        if you have any issue with the step.
 
         Examples: "--stactrace", "--info" or "--debug" (without the quote marks).
 
