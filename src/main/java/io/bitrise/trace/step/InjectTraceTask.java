@@ -97,6 +97,7 @@ public class InjectTraceTask extends DefaultTask {
         final Project rootProject = getProject();
         final Project applicationModule = getApplicationModule(rootProject.getSubprojects());
 
+        // TODO check prerequirements (com.android.tools.build:gradle)
         ensureTraceSdkDependency(applicationModule);
         ensureTraceGradlePluginDependency(applicationModule);
         ensureTraceGradlePluginIsApplied(applicationModule);
@@ -298,6 +299,7 @@ public class InjectTraceTask extends DefaultTask {
                         "   %s" +
                         "   repositories {\n" +
                         "      jcenter()\n" +
+                        "      google()\n" +
                         "    }"
                 , getTraceGradlePluginDependency());
     }
