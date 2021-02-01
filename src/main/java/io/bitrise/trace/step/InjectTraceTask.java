@@ -135,7 +135,8 @@ public class InjectTraceTask extends DefaultTask {
         if (hasTraceSdkDependency(appModule)) {
             logger.info("Skipping injecting the dependency. Please make sure that in your build.gradle files the " +
                     "dependency is defined for all the required configurations! For more information please " +
-                    "check the README.md of \"trace-android-sdk\"");
+                    "check the README.md of \"trace-android-sdk\" " +
+                    "(https://github.com/bitrise-io/trace-android-sdk/blob/main/README.md)");
         } else {
             logger.info("Adding dependency on  \"{}\" for project \"{}\".", TRACE_SDK_DEPENDENCY_NAME,
                     appModule.getName());
