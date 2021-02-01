@@ -142,6 +142,7 @@ func runVerifyTraceTask(rootDir, options string) error {
 	if e != nil {
 		return fmt.Errorf("VerifyTraceTask failed. Error: %s\nConsole output: %s\nError output: %s", e, stdOut.String(), stdErr.String())
 	}
+	fmt.Printf("Console output from VerifyTrace task:\n%s", stdOut.String())
 
 	return nil
 }

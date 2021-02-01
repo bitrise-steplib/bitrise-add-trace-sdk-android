@@ -4,8 +4,8 @@ import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.logging.Logger;
 import org.gradle.api.tasks.TaskAction;
-import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -114,8 +114,9 @@ public class InjectTraceTask extends DefaultTask {
             final String projectName = project.getName();
             logger.debug("Checking project \"{}\" if it is an Android application", projectName);
             if (project.getPlugins().hasPlugin("com.android.application")) {
-                logger.info("Project \"{}\" is an Android application! Task will ensure it has all the required Trace" +
-                        " dependencies", projectName);
+                logger.lifecycle(
+                        "Project \"{}\" is an Android application! Task will ensure it has all the required Trace" +
+                                " dependencies", projectName);
                 return project;
             }
             logger.debug("Project \"{}\" is not an Android application!", projectName);
@@ -135,12 +136,12 @@ public class InjectTraceTask extends DefaultTask {
      */
     private void ensureTraceSdkDependency(final Project appModule) throws IOException {
         if (hasTraceSdkDependency(appModule)) {
-            logger.info("Skipping injecting the dependency. Please make sure that in your build.gradle files the " +
+            logger.lifecycle("Skipping injecting the dependency. Please make sure that in your build.gradle files the " +
                     "dependency is defined for all the required configurations! For more information please " +
                     "check the README.md of \"trace-android-sdk\" " +
                     "(https://github.com/bitrise-io/trace-android-sdk/blob/main/README.md)");
         } else {
-            logger.info("Adding dependency on  \"{}\" for project \"{}\".", TRACE_SDK_DEPENDENCY_NAME,
+            logger.lifecycle("Adding dependency on  \"{}\" for project \"{}\".", TRACE_SDK_DEPENDENCY_NAME,
                     appModule.getName());
             addTraceSdkDependency(appModule);
         }
@@ -191,11 +192,12 @@ public class InjectTraceTask extends DefaultTask {
      */
     private void ensureTraceGradlePluginDependency(final Project appModule) throws IOException {
         if (hasTraceGradlePluginDependency(appModule)) {
-            logger.info("Skipping injecting the dependency. Please make sure that in your build.gradle files the " +
-                    "dependency is defined for all the required configurations! For more information please " +
-                    "check the README.md of \"trace-android-sdk\"");
+            logger.lifecycle(
+                    "Skipping injecting the dependency. Please make sure that in your build.gradle files the " +
+                            "dependency is defined for all the required configurations! For more information please " +
+                            "check the README.md of \"trace-android-sdk\"");
         } else {
-            logger.info("Adding dependency on  \"{}\" for project \"{}\".", TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME,
+            logger.lifecycle("Adding dependency on  \"{}\" for project \"{}\".", TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME,
                     appModule.getName());
             addTraceGradlePluginDependency(appModule.getBuildFile().getPath());
         }
@@ -230,7 +232,7 @@ public class InjectTraceTask extends DefaultTask {
         if (updateBuildScriptContent(buildGradlePath)) {
             logger.info("Updated buildscript block of \"{}\".", buildGradlePath);
         } else {
-            logger.debug(" \"{}\" does not have buldscript block, adding it.", buildGradlePath);
+            logger.debug(" \"{}\" does not have buildscript block, adding it.", buildGradlePath);
             insertDependencyWithBuildScriptClosure(buildGradlePath);
         }
     }
@@ -327,11 +329,14 @@ public class InjectTraceTask extends DefaultTask {
      */
     private void ensureTraceGradlePluginIsApplied(final Project appModule) throws IOException {
         if (isTraceGradlePluginApplied(appModule)) {
-            logger.info("Project \"{}\" has already applied \"{}\" as a plugin, skipping injecting the plugin apply. " +
+            logger.lifecycle(
+                    "Project \"{}\" has already applied \"{}\" as a plugin, skipping injecting the plugin apply. " +
                             "For more information please check the README.md of \"trace-android-sdk\"",
                     appModule.getName(), TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME);
         } else {
             injectTraceGradlePluginApply(appModule);
+            logger.lifecycle("Applied plugin \"{}\" on project \"{}\"", TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME,
+                    appModule.getName());
         }
     }
 
