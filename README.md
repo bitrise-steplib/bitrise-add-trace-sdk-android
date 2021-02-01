@@ -2,13 +2,15 @@
 
 ## Overview
 
-Ensures that Trace SDK (trace-android-sdk) is added to a given Android application project. Adds the required
-dependency (trace-sdk) and applies plugin (trace-gradle-plugin) if project not already have them. This step is needed,
-when you have not added TRACE SDK manually to your project. For manual installation see the linked documentation.
+Ensures that Trace is added to a given Android application project. Adds the required
+dependency (trace-sdk) and applies plugin (trace-gradle-plugin) if project does not already have 
+them. This step is needed, when you have not added Trace manually to your project. For manual
+installation see the linked documentation.
 
-**Use this step before your application is built.**
+**Use this step before your application is built/assembled with Gradle**
 
-For the known limitations of trace-android-sdk please see the README.md file.
+For the known limitations of trace-android-sdk please see the 
+[README.md](https://github.com/bitrise-io/trace-android-sdk/blob/main/README.md) file.
 
 ## Tech details
 
