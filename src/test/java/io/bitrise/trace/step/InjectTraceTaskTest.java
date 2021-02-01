@@ -3,10 +3,16 @@ package io.bitrise.trace.step;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.internal.artifacts.DefaultDependencySet;
 import org.gradle.api.internal.artifacts.configurations.DefaultConfiguration;
+import org.gradle.internal.impldep.org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -345,6 +351,43 @@ public class InjectTraceTaskTest {
     @Test(expected = IllegalStateException.class)
     public void getContentToAppend_None() {
         InjectTraceTask.getContentToAppend("README.md", DUMMY_GRADLE_FILE_NAME);
+    }
+    //endregion
+
+
+    //region updateBuildScriptContent
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
+
+    @Test
+    public void updateBuildScriptContent_BuildScriptShouldBeUpdated() throws IOException {
+        final File tempFile = tempFolder.newFile("build.gradle");
+
+        final String gradleFileContent = "\n" +
+                "someContent\n" +
+                "buildscript {" +
+                "%s" +
+                "    repositories {\n" +
+                "        mavenLocal()\n" +
+                "        google()\n" +
+                "        jcenter()\n" +
+                "    }\n" +
+                "    dependencies {\n" +
+                "        classpath 'com.android.tools.build:gradle:4.0.2'\n" +
+                "    }\n" +
+                "} " +
+                "\nsomeContent";
+
+        FileUtils.writeStringToFile(tempFile, String.format(gradleFileContent, "\n"),
+                Charset.defaultCharset());
+
+        InjectTraceTask.updateBuildScriptContent(tempFile.getPath());
+
+        final String actual = FileUtils.readFileToString(tempFile, Charset.defaultCharset());
+        final String expected = String.format(gradleFileContent + "\n",
+                InjectTraceTask.getTraceGradlePluginDependency() + InjectTraceTask.getBuildScriptRepositoryContent() + "\n");
+
+        assertThat(actual, equalTo(expected));
     }
     //endregion
 }

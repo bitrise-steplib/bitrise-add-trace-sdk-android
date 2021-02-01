@@ -245,7 +245,7 @@ public class InjectTraceTask extends DefaultTask {
      * @return {@code true} if the buildscript block has been updated, {@code false otherwise}.
      * @throws IOException when any I/O error occurs with the file on the path.
      */
-    private boolean updateBuildScriptContent(final String path) throws IOException {
+    static boolean updateBuildScriptContent(final String path) throws IOException {
         final String codeContent = getCodeContent(path);
         final String regex = "buildscript[ \\t\\n\\r]*\\{";
         final Pattern pattern = Pattern.compile(regex);
@@ -271,13 +271,25 @@ public class InjectTraceTask extends DefaultTask {
      */
     private void insertDependencyWithBuildScriptClosure(final String buildGradlePath) throws IOException {
         final String buildscriptClosure = "\nbuildscript {\n" +
-                "    %s\n" +
-                "    repositories {\n" +
-                "        jcenter()\n" +
-                "        google()\n" +
-                "    }\n" +
+                "%s\n" +
+                "%s\n" +
                 "}";
-        appendContentToFile(buildGradlePath, String.format(buildscriptClosure, getTraceGradlePluginDependency()));
+        appendContentToFile(buildGradlePath, String.format(buildscriptClosure,
+                getTraceGradlePluginDependency(), getBuildScriptRepositoryContent()));
+    }
+
+
+    /**
+     * Gets the content for updating the buildscript with a new dependency on
+     * {@link #TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME}.
+     *
+     * @return @return the content that should be in the build.gradle.
+     */
+    private static String getUpdatedBuildScriptContent() {
+        return String.format("buildscript {" +
+                        "%s" +
+                        "%s"
+                , getTraceGradlePluginDependency(), getBuildScriptRepositoryContent());
     }
 
     /**
@@ -285,23 +297,22 @@ public class InjectTraceTask extends DefaultTask {
      *
      * @return the content that should be in the build.gradle.
      */
-    private String getTraceGradlePluginDependency() {
-        return String.format("\ndependencies.add(\"classpath\", \"io.bitrise.trace.plugin:trace-gradle-plugin:%s\")\n",
+    static String getTraceGradlePluginDependency() {
+        return String.format(
+                "\n   dependencies.add(\"classpath\", \"io.bitrise.trace.plugin:trace-gradle-plugin:%s\")\n",
                 TRACE_GRADLE_PLUGIN_VERSION);
     }
 
     /**
-     * Gets the content for updating the buildscript with a new dependency on
-     * {@link #TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME}.
+     * Gets the content for adding repositories to the buildscript.
+     *
+     * @return the content that should be in the build.gradle.
      */
-    private String getUpdatedBuildScriptContent() {
-        return String.format("buildscript {" +
-                        "   %s" +
-                        "   repositories {\n" +
-                        "      jcenter()\n" +
-                        "      google()\n" +
-                        "    }"
-                , getTraceGradlePluginDependency());
+    static String getBuildScriptRepositoryContent() {
+        return "   repositories {\n" +
+                "      jcenter()\n" +
+                "      google()\n" +
+                "    }";
     }
 
     //endregion
