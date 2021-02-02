@@ -25,11 +25,11 @@ workflows:
       - go-test:
     after_run:
       - before_all_tests
-      - test_setup_0
-      - test_setup_1
-      - test_setup_2
-      - test_setup_3
-      - test_setup_4
+      - test_0_with_setup_for_sample_ship_addon_android
+      - test_1_with_setup_for_sample_apps_monorepo_KotlinApplication
+      - test_2_with_setup_for_sample_apps_monorepo_KotlinScrollApp
+      - test_3_with_setup_for_sample_apps_monorepo_SimpleAndroid
+      - test_4_with_setup_for_sample_apps_monorepo_TabbedAndroid
 
   # Runs before every test to prepare environment
   before_test:
@@ -80,8 +80,8 @@ workflows:
                 echo "Root path is set to $rootPath"
                 envman add --key IT_ROOT_PATH --value $rootPath
 
-  # Setup for sample-ship-addon-android
-  test_setup_0:
+  # Test and setup for sample-ship-addon-android
+  test_0_with_setup_for_sample_ship_addon_android:
     envs:
       - BITRISEIO_GIT_REPOSITORY_SLUG: "sample-ship-addon-android"
       - IT_REPO_TO_CLONE: "https://github.com/bitrise-io/sample-ship-addon-android.git"
@@ -91,8 +91,8 @@ workflows:
     after_run:
       - _test_step
 
-  # Setup for KotlinApplication in sample-apps-monorepo
-  test_setup_1:
+  # Test and setup for KotlinApplication in sample-apps-monorepo
+  test_1_with_setup_for_sample_apps_monorepo_KotlinApplication:
     envs:
       - BITRISEIO_GIT_REPOSITORY_SLUG: "sample-apps-monorepo"
       - IT_REPO_TO_CLONE: "https://github.com/bitrise-io/sample-apps-monorepo.git"
@@ -102,8 +102,8 @@ workflows:
     after_run:
       - _test_step
 
-  # Setup for KotlinScrollApp in sample-apps-monorepo
-  test_setup_2:
+  # Test and setup for KotlinScrollApp in sample-apps-monorepo
+  test_2_with_setup_for_sample_apps_monorepo_KotlinScrollApp:
     envs:
       - BITRISEIO_GIT_REPOSITORY_SLUG: "sample-apps-monorepo"
       - IT_REPO_TO_CLONE: "https://github.com/bitrise-io/sample-apps-monorepo.git"
@@ -113,8 +113,8 @@ workflows:
     after_run:
       - _test_step
 
-  # Setup for SimpleAndroid in sample-apps-monorepo
-  test_setup_3:
+  # Test and setup for SimpleAndroid in sample-apps-monorepo
+  test_3_with_setup_for_sample_apps_monorepo_SimpleAndroid:
     envs:
       - BITRISEIO_GIT_REPOSITORY_SLUG: "sample-apps-monorepo"
       - IT_REPO_TO_CLONE: "https://github.com/bitrise-io/sample-apps-monorepo.git"
@@ -124,8 +124,8 @@ workflows:
     after_run:
       - _test_step
 
-  # Setup for TabbedAndroid in sample-apps-monorepo
-  test_setup_4:
+  # Test and setup for TabbedAndroid in sample-apps-monorepo
+  test_4_with_setup_for_sample_apps_monorepo_TabbedAndroid:
     envs:
       - BITRISEIO_GIT_REPOSITORY_SLUG: "sample-apps-monorepo"
       - IT_REPO_TO_CLONE: "https://github.com/bitrise-io/sample-apps-monorepo.git"

@@ -97,7 +97,7 @@ public class InjectTraceTask extends DefaultTask {
         final Project rootProject = getProject();
         final Project applicationModule = getApplicationModule(rootProject.getSubprojects());
 
-        // TODO check prerequirements (com.android.tools.build:gradle)
+        // TODO check prerequirements: APM-2341 (example: com.android.tools.build:gradle)
         ensureTraceSdkDependency(applicationModule);
         ensureTraceGradlePluginDependency(applicationModule);
         ensureTraceGradlePluginIsApplied(applicationModule);
@@ -232,7 +232,7 @@ public class InjectTraceTask extends DefaultTask {
         if (updateBuildScriptContent(buildGradlePath)) {
             logger.info("Updated buildscript block of \"{}\".", buildGradlePath);
         } else {
-            logger.debug(" \"{}\" does not have buildscript block, adding it.", buildGradlePath);
+            logger.debug(" \"{}\" does not have a buildscript block, adding it.", buildGradlePath);
             insertDependencyWithBuildScriptClosure(buildGradlePath);
         }
     }

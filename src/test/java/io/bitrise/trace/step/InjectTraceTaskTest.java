@@ -3,6 +3,8 @@ package io.bitrise.trace.step;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.internal.artifacts.DefaultDependencySet;
 import org.gradle.api.internal.artifacts.configurations.DefaultConfiguration;
+import org.gradle.api.logging.Logger;
+import org.gradle.api.logging.Logging;
 import org.gradle.internal.impldep.org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -29,7 +31,7 @@ public class InjectTraceTaskTest {
 
     @BeforeClass
     public static void setup() {
-        InjectTraceTask.logger = LoggerFactory.getLogger(InjectTraceTaskTest.class.getName());
+        InjectTraceTask.logger = Logging.getLogger(InjectTraceTaskTest.class.getName());
     }
 
     //region getSmallestNonNegativeNumber tests
@@ -353,7 +355,6 @@ public class InjectTraceTaskTest {
         InjectTraceTask.getContentToAppend("README.md", DUMMY_GRADLE_FILE_NAME);
     }
     //endregion
-
 
     //region updateBuildScriptContent
     @Rule
