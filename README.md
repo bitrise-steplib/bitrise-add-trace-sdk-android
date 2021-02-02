@@ -20,12 +20,12 @@ This step is a hybrid Go-Java step. Initially it will do the following:
 
 * Append InjectTraceTask to the root build.gradle
 
-* Runs that task
+* Runs InjectTraceTask
 
-* The task will check your dependencies, ensures 'trace-sdk' is a dependency and 'trace-gradle-plugin' 
+* InjectTraceTask will check your dependencies, ensures 'trace-sdk' is a dependency and 'trace-gradle-plugin' 
 is applied as a plugin
 
-* If needed, will add the dependencies and apply the plugin on your build.gradle files
+* If needed, InjectTraceTask will add the dependencies and apply the plugin on your build.gradle files
 
 ## Documentation
 
