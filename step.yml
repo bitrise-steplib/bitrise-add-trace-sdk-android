@@ -1,7 +1,9 @@
 title: |-
   Add Trace SDK Android
 summary: |
-  Adds the Trace SDK to the given Android application.
+  Add the Trace SDK before the build process
+
+  Important: Please read the Trace license terms in the SDK. By clicking here to add the Trace SDK, you are agreeing to those license terms.
 description: |
   # Overview
 
