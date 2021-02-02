@@ -9,7 +9,6 @@ import (
 // Environment variables
 const apmTokenEnvName = "APM_COLLECTOR_TOKEN"
 const projectDirEnvName = "BITRISEIO_GIT_REPOSITORY_SLUG"
-const srcDir = "BITRISE_SOURCE_DIR"
 const stepSrcDirEnvName = "BITRISE_STEP_SOURCE_DIR"
 
 // Config file values
@@ -37,16 +36,11 @@ type Configs struct {
 
 // Returns the directory for the Android application.
 func projectDir(src string) (string, error) {
-	root, err := env(srcDir)
-	if err != nil {
-		return "", err
-	}
-
 	pDir, err := env(projectDirEnvName)
 	if err != nil {
 		return "", err
 	}
-	return path.Join(root, pDir, src), nil
+	return path.Join(pDir, src), nil
 }
 
 // Gets an environment variable, throws error when it is not present.
