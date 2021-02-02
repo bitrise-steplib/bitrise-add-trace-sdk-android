@@ -3,7 +3,7 @@
 ## Overview
 
 Ensures that Trace is added to a given Android application project. Adds the required
-dependency (trace-sdk) and applies plugin (trace-gradle-plugin) if project does not already have 
+dependency (trace-sdk) and applies plugin (trace-gradle-plugin) if the project does not already have 
 them. This step is needed, when you have not added Trace manually to your project. For manual
 installation see the documentation below.
 
@@ -18,7 +18,7 @@ This step is a hybrid Go-Java step. Initially it will do the following:
 
 * Create/add to the Android project's buildSrc a Gradle task called InjectTraceTask
 
-* Append this task to the root build.gradle
+* Append InjectTraceTask to the root build.gradle
 
 * Runs that task
 
