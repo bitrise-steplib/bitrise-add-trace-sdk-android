@@ -5,7 +5,7 @@
 Ensures that Trace is added to a given Android application project. Adds the required
 dependency (trace-sdk) and applies plugin (trace-gradle-plugin) if project does not already have 
 them. This step is needed, when you have not added Trace manually to your project. For manual
-installation see the linked documentation.
+installation see the documentation below.
 
 **Use this step before your application is built/assembled with Gradle**
 
