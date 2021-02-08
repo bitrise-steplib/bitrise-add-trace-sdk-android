@@ -3,5 +3,5 @@ repositories {
 }
 
 dependencies {
-    implementation("io.bitrise.trace:trace-sdk:0.0.5")
+    implementation("io.bitrise.trace:trace-sdk:+")
 }

@@ -72,7 +72,7 @@ public class InjectTraceTask extends DefaultTask {
      * The version of {@link #TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME}, which will be injected project. Note: for the
      * version of {@link #TRACE_SDK_DEPENDENCY_NAME} check traceSdk.gradle.
      */
-    private static final String TRACE_GRADLE_PLUGIN_VERSION = "0.0.4";
+    private static final String TRACE_GRADLE_PLUGIN_VERSION = "+";
 
     /**
      * Environment variable name for the source code of the step.
