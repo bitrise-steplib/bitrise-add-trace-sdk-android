@@ -9,9 +9,6 @@ installation see the documentation below.
 
 **Use this step before your application is built/assembled with Gradle**
 
-For the known limitations of trace-android-sdk please see the 
-[README.md](https://github.com/bitrise-io/trace-android-sdk/blob/main/README.md) file.
-
 ## Tech details
 
 This step is a hybrid Go-Java step. Initially it will do the following:
