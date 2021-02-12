@@ -84,7 +84,7 @@ workflows:
     envs:
       - BITRISEIO_GIT_REPOSITORY_SLUG: "sample-ship-addon-android"
       - IT_REPO_TO_CLONE: "https://github.com/bitrise-io/sample-ship-addon-android.git"
-      - IT_SOURCE_DIR: "./"
+      - IT_SOURCE_DIR: "./$BITRISEIO_GIT_REPOSITORY_SLUG/"
     before_run:
       - before_test
     after_run:
@@ -95,7 +95,7 @@ workflows:
     envs:
       - BITRISEIO_GIT_REPOSITORY_SLUG: "sample-apps-monorepo"
       - IT_REPO_TO_CLONE: "https://github.com/bitrise-io/sample-apps-monorepo.git"
-      - IT_SOURCE_DIR: "./android/KotlinApplication/"
+      - IT_SOURCE_DIR: "./$BITRISEIO_GIT_REPOSITORY_SLUG/android/KotlinApplication/"
     before_run:
       - before_test
     after_run:
@@ -106,7 +106,7 @@ workflows:
     envs:
       - BITRISEIO_GIT_REPOSITORY_SLUG: "sample-apps-monorepo"
       - IT_REPO_TO_CLONE: "https://github.com/bitrise-io/sample-apps-monorepo.git"
-      - IT_SOURCE_DIR: "./android/KotlinScrollApp/"
+      - IT_SOURCE_DIR: "./$BITRISEIO_GIT_REPOSITORY_SLUG/android/KotlinScrollApp/"
     before_run:
       - before_test
     after_run:
@@ -117,7 +117,7 @@ workflows:
     envs:
       - BITRISEIO_GIT_REPOSITORY_SLUG: "sample-apps-monorepo"
       - IT_REPO_TO_CLONE: "https://github.com/bitrise-io/sample-apps-monorepo.git"
-      - IT_SOURCE_DIR: "./android/SimpleAndroid/"
+      - IT_SOURCE_DIR: "./$BITRISEIO_GIT_REPOSITORY_SLUG/android/SimpleAndroid/"
     before_run:
       - before_test
     after_run:
@@ -128,7 +128,7 @@ workflows:
     envs:
       - BITRISEIO_GIT_REPOSITORY_SLUG: "sample-apps-monorepo"
       - IT_REPO_TO_CLONE: "https://github.com/bitrise-io/sample-apps-monorepo.git"
-      - IT_SOURCE_DIR: "./android/TabbedAndroid/"
+      - IT_SOURCE_DIR: "./$BITRISEIO_GIT_REPOSITORY_SLUG/android/TabbedAndroid/"
     before_run:
       - before_test
     after_run:
@@ -145,6 +145,7 @@ workflows:
                 echo "IT_ROOT_PATH: " $IT_ROOT_PATH
                 echo "IT_SOURCE_DIR: " $IT_SOURCE_DIR
                 echo "IT_REPO_TO_CLONE: " $IT_REPO_TO_CLONE
+                echo "BITRISEIO_GIT_REPOSITORY_SLUG: " $BITRISEIO_GIT_REPOSITORY_SLUG
 
                 git clone --branch main $IT_REPO_TO_CLONE
       - path::./:

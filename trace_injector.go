@@ -83,14 +83,9 @@ func runTraceInjector(rootDir, options string) error {
 		return fmt.Errorf("cannot parse Gradle Task Options, please make sure it is set correctly. Value: \"%s\". Error: %s ", options, err)
 	}
 
-	projDir, err := projectDir(rootDir)
-	if err != nil {
-		return fmt.Errorf("cannot start injector task. Reason: %s", err)
-	}
-
 	var stdOut bytes.Buffer
 	var stdErr bytes.Buffer
-	cmdSlice := []string{path.Join(projDir, "./gradlew"), injectTraceTaskName, "-p", projDir}
+	cmdSlice := []string{path.Join(rootDir, "./gradlew"), injectTraceTaskName, "-p", rootDir}
 	cmdSlice = append(cmdSlice, optionSlice...)
 
 	cmd := exec.Command(cmdSlice[0], cmdSlice[1:]...)
