@@ -65,22 +65,13 @@ func createConfigurationFile(rootDir string) error {
 		return err
 	}
 
-	src, err := projectDir(rootDir)
-	if err != nil {
-		return err
-	}
-	p := path.Join(src, configFileName)
+	p := path.Join(rootDir, configFileName)
 	return createConfigFile(fc, p)
 }
 
 // Adds the InjectTraceTask to the given project. Requires the root directory of the project as an input.
 func addTraceInjectorTask(rootDir string) error {
-	projSrc, err := projectDir(rootDir)
-	if err != nil {
-		return err
-	}
-
-	gradlePath, err := findRootGradle(projSrc)
+	gradlePath, err := findRootGradle(rootDir)
 	if err != nil {
 		return err
 	}
@@ -93,7 +84,8 @@ func addTraceInjectorTask(rootDir string) error {
 	if err != nil {
 		return err
 	}
-	if err := addTaskFile(stepSrc, projSrc); err != nil {
+
+	if err := addTaskFile(stepSrc, rootDir); err != nil {
 		return fmt.Errorf("failed to add Trace injector task file to project. Reason: %s", err)
 	}
 	return nil
@@ -123,14 +115,9 @@ func runVerifyTraceTask(rootDir, options string) error {
 		return fmt.Errorf("cannot parse Gradle Task Options, please make sure it is set correctly. Value: \"%s\". Error: %s ", options, err)
 	}
 
-	projDir, err := projectDir(rootDir)
-	if err != nil {
-		return fmt.Errorf("cannot start verify task. Reason: %s", err)
-	}
-
 	var stdOut bytes.Buffer
 	var stdErr bytes.Buffer
-	cmdSlice := []string{path.Join(projDir, "./gradlew"), verifyTraceTaskName, "-p", projDir}
+	cmdSlice := []string{path.Join(rootDir, "./gradlew"), verifyTraceTaskName, "-p", rootDir}
 	cmdSlice = append(cmdSlice, optionSlice...)
 
 	cmd := exec.Command(cmdSlice[0], cmdSlice[1:]...)

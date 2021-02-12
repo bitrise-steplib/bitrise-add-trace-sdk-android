@@ -3,12 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
-	"path"
 )
 
 // Environment variables
 const apmTokenEnvName = "APM_COLLECTOR_TOKEN"
-const projectDirEnvName = "BITRISEIO_GIT_REPOSITORY_SLUG"
 const stepSrcDirEnvName = "BITRISE_STEP_SOURCE_DIR"
 
 // Config file values
@@ -32,15 +30,6 @@ const groovyBuildGradleSuffix = ".gradle"
 type Configs struct {
 	RootProjectPath string `env:"project_path"`
 	GradleOptions   string `env:"gradle_options"`
-}
-
-// Returns the directory for the Android application.
-func projectDir(src string) (string, error) {
-	pDir, err := env(projectDirEnvName)
-	if err != nil {
-		return "", err
-	}
-	return path.Join(pDir, src), nil
 }
 
 // Gets an environment variable, throws error when it is not present.
