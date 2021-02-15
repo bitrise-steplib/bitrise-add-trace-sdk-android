@@ -3,7 +3,7 @@
 ## Overview
 
 Ensures that Trace is added to a given Android application project. Adds the required
-dependency (trace-sdk) and applies plugin (trace-gradle-plugin) if the project does not already have 
+dependency (trace-sdk) and applies the plugin (trace-gradle-plugin) if the project does not already have 
 them. This step is needed, when you have not added Trace manually to your project. For manual
 installation see the documentation below.
 
