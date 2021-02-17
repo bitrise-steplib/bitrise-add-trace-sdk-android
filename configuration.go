@@ -28,7 +28,7 @@ const groovyBuildGradleSuffix = ".gradle"
 
 // Configs stores the step's inputs
 type Configs struct {
-	RootProjectPath string `env:"project_path"`
+	RootProjectPath string `env:"project_location"`
 	GradleOptions   string `env:"gradle_options"`
 }
 

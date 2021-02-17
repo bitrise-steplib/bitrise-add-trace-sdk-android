@@ -173,7 +173,7 @@ workflows:
             Runs the test, which ensure that the correct configuration file is created.
           run_if: true
           inputs:
-            - project_path: $IT_SOURCE_DIR
+            - project_location: $IT_SOURCE_DIR
 
   # ----------------------------------------------------------------
   # --- workflows to Share this step into a Step Library
