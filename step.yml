@@ -58,7 +58,7 @@ toolkit:
     package_name: github.com/bitrise-steplib/bitrise-add-trace-sdk-android
 
 inputs:
-  - project_path: $BITRISE_SOURCE_DIR/
+  - project_location: $BITRISE_SOURCE_DIR/
     opts:
       title: "Path of the root project"
       summary: Path of the root project
