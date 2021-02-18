@@ -15,9 +15,12 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,10 +31,18 @@ import javax.inject.Inject;
 public class UpdateChangeLogTask extends DefaultTask {
 
     private final Logger logger;
+    private final Set<String> allowedCommitTypes = new HashSet<>();
 
     @Inject
     public UpdateChangeLogTask() {
         this.logger = getProject().getLogger();
+        initAllowedCommitTypes();
+    }
+
+    private void initAllowedCommitTypes() {
+        final Set<String> allowedCommitTypes = new HashSet<>(Arrays.asList("fix", "feat"));
+        this.allowedCommitTypes.addAll(allowedCommitTypes);
+        allowedCommitTypes.forEach(it -> this.allowedCommitTypes.add(it + "!"));
     }
 
     @TaskAction
@@ -43,6 +54,10 @@ public class UpdateChangeLogTask extends DefaultTask {
         logger.lifecycle("The name of the release in the CHANGELOG.md will be: {}", releaseName);
         final List<RevCommit> newCommits = getNewCommits(git, tag3);
         logger.lifecycle("Found {} commits since last release", newCommits.size());
+        if (newCommits.size() == 0) {
+            logger.warn("No new commits found, nothing to update, cancelling task");
+            return;
+        }
         final List<String> changeLogEntries = formatCommitsToChangeLogEntries(newCommits);
         logger.lifecycle("Formatted commit messages to CHANGELOG entries");
         final File changeLogFile = getChangeLogFile();
@@ -122,11 +137,16 @@ public class UpdateChangeLogTask extends DefaultTask {
         final int initialPos = 3;
         originalLines.add(initialPos, releaseName);
 
-        for (int i = 0; i < newEntries.size(); i++) {
-            originalLines.add(initialPos + 1 + i, newEntries.get(i));
+        if (newEntries.size() == 0) {
+            logger.warn("No commits found, with the allowed types, only adding the release name to the CHANGELOG.md");
+            originalLines.add(initialPos + 1, "* Maintenance release, no fixes or new features");
+        } else {
+            for (int i = 0; i < newEntries.size(); i++) {
+                originalLines.add(initialPos + 1 + i, newEntries.get(i));
+            }
         }
 
-        originalLines.add(initialPos + 1 + newEntries.size(),"");
+        originalLines.add(initialPos + 1 + newEntries.size(), "");
         return originalLines;
     }
 
@@ -147,13 +167,16 @@ public class UpdateChangeLogTask extends DefaultTask {
         if (matcher.find()) {
             final String commitType = matcher.group(1).trim();
             final String title = matcher.group(2).trim();
-            final String messageWithFooter = removeFooter(matcher.group(3).trim(), footerPattern);
-            return String.format("* %s: **%s:** %s", commitType, title, messageWithFooter);
+            if (allowedCommitTypes.contains(commitType)) {
+                final String messageWithFooter = removeFooter(matcher.group(3).trim(), footerPattern);
+                return String.format("* %s: **%s:** %s", commitType, title, messageWithFooter);
+            }
+            logger.debug("Skipping commit message with subject \"{}\" as it has a type of {}", title, commitType);
         } else {
             logger.warn("Could not parse commit message, ignoring. Please add manually to the CHANGELOG.md if it is " +
                     "required! The message:\n{}", commitMessage);
-            return null;
         }
+        return null;
     }
 
     private String removeFooter(final String message, final Pattern footerPattern) {
