@@ -49,10 +49,10 @@ public class UpdateChangeLogTask extends DefaultTask {
     public void taskAction() throws IOException {
         logger.lifecycle("Starting the update of CHANGELOG.md");
         final Git git = getGit();
-        final Ref tag3 = getAllTags(git).get(2); //TODO change to last tag
-        final String releaseName = getReleaseName(tag3);
+        final Ref lastTag = getLastTag(git);
+        final String releaseName = getReleaseName(lastTag);
         logger.lifecycle("The name of the release in the CHANGELOG.md will be: {}", releaseName);
-        final List<RevCommit> newCommits = getNewCommits(git, tag3);
+        final List<RevCommit> newCommits = getNewCommits(git, lastTag);
         logger.lifecycle("Found {} commits since last release", newCommits.size());
         if (newCommits.size() == 0) {
             logger.warn("No new commits found, nothing to update, cancelling task");
@@ -78,6 +78,7 @@ public class UpdateChangeLogTask extends DefaultTask {
                 // Found the tag
                 break;
             }
+
             newCommits.add(next);
             next = revWalk.next();
         }
@@ -167,6 +168,7 @@ public class UpdateChangeLogTask extends DefaultTask {
         if (matcher.find()) {
             final String commitType = matcher.group(1).trim();
             final String title = matcher.group(2).trim();
+            logger.debug("Commit type is \n{}\n, title is \n{}\n", commitType, title);
             if (allowedCommitTypes.contains(commitType)) {
                 final String messageWithFooter = removeFooter(matcher.group(3).trim(), footerPattern);
                 return String.format("* %s: **%s:** %s", commitType, title, messageWithFooter);
