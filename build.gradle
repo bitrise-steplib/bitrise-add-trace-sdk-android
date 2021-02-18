@@ -1,13 +1,25 @@
+import io.bitrise.trace.internal.UpdateChangeLogTask
+
 buildscript {
     repositories {
         jcenter()
+        google()
+    }
+
+    dependencies {
+        classpath files("./buildSrc/main/java/*")
+
     }
 }
 
+
 apply plugin: "java"
 
-repositories {
-    jcenter()
+
+allprojects {
+    repositories {
+        jcenter()
+    }
 }
 
 dependencies {
@@ -18,3 +30,5 @@ dependencies {
     testImplementation "org.hamcrest:hamcrest:2.2"
     testImplementation "org.mockito:mockito-core:3.2.4"
 }
+
+task updateChangeLogTask(type: UpdateChangeLogTask)
