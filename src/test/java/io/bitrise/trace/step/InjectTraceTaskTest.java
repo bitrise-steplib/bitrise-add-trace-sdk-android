@@ -3,24 +3,27 @@ package io.bitrise.trace.step;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.internal.artifacts.DefaultDependencySet;
 import org.gradle.api.internal.artifacts.configurations.DefaultConfiguration;
-import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.internal.impldep.org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -360,35 +363,50 @@ public class InjectTraceTaskTest {
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
+    private final static String DUMMY_BUILD_GRADLE_CONTENT = "\n" +
+            "someContent\n" +
+            "buildscript {" +
+            "%s" +
+            "    repositories {\n" +
+            "        mavenLocal()\n" +
+            "        google()\n" +
+            "        jcenter()\n" +
+            "    }\n" +
+            "    dependencies {\n" +
+            "        classpath 'com.android.tools.build:gradle:4.0.2'\n" +
+            "    }\n" +
+            "} " +
+            "\nsomeContent";
+
     @Test
     public void updateBuildScriptContent_BuildScriptShouldBeUpdated() throws IOException {
         final File tempFile = tempFolder.newFile("build.gradle");
-
-        final String gradleFileContent = "\n" +
-                "someContent\n" +
-                "buildscript {" +
-                "%s" +
-                "    repositories {\n" +
-                "        mavenLocal()\n" +
-                "        google()\n" +
-                "        jcenter()\n" +
-                "    }\n" +
-                "    dependencies {\n" +
-                "        classpath 'com.android.tools.build:gradle:4.0.2'\n" +
-                "    }\n" +
-                "} " +
-                "\nsomeContent";
-
-        FileUtils.writeStringToFile(tempFile, String.format(gradleFileContent, "\n"),
+        FileUtils.writeStringToFile(tempFile, String.format(DUMMY_BUILD_GRADLE_CONTENT, "\n"),
                 Charset.defaultCharset());
 
         InjectTraceTask.updateBuildScriptContent(tempFile.getPath());
 
         final String actual = FileUtils.readFileToString(tempFile, Charset.defaultCharset());
-        final String expected = String.format(gradleFileContent + "\n",
+        final String expected = String.format(DUMMY_BUILD_GRADLE_CONTENT + "\n",
                 InjectTraceTask.getTraceGradlePluginDependency() + InjectTraceTask.getBuildScriptRepositoryContent() + "\n");
 
         assertThat(actual, equalTo(expected));
+    }
+
+    @Test
+    public void appendContentToTop_ContentShouldBeOnTheTop() throws IOException {
+        final File tempFile = tempFolder.newFile("build.gradle");
+        FileUtils.writeStringToFile(tempFile, String.format(DUMMY_BUILD_GRADLE_CONTENT, "\n"),
+                Charset.defaultCharset());
+
+        final String dummyTopContent = "THIS SHOULD BE ON THE TOP";
+        final List<String> originalContent = Files.readAllLines(Paths.get(tempFile.getPath()), StandardCharsets.UTF_8);
+        InjectTraceTask.appendContentToTop(tempFile.getPath(), dummyTopContent + "\n");
+
+        final List<String> expected = originalContent;
+        originalContent.add(0, dummyTopContent);
+        final List<String> actual = Files.readAllLines(Paths.get(tempFile.getPath()), StandardCharsets.UTF_8);
+        assertEquals(expected, actual);
     }
     //endregion
 }

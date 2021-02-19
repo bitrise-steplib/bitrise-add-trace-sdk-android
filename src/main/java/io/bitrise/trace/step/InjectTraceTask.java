@@ -137,10 +137,11 @@ public class InjectTraceTask extends DefaultTask {
      */
     private void ensureTraceSdkDependency(final Project appModule) throws IOException {
         if (hasTraceSdkDependency(appModule)) {
-            logger.lifecycle("Skipping injecting the dependency. Please make sure that in your build.gradle files the " +
-                    "dependency is defined for all the required configurations! For more information please " +
-                    "check the README.md of \"trace-android-sdk\" " +
-                    "(https://github.com/bitrise-io/trace-android-sdk/blob/main/README.md)");
+            logger.lifecycle(
+                    "Skipping injecting the dependency. Please make sure that in your build.gradle files the " +
+                            "dependency is defined for all the required configurations! For more information please " +
+                            "check the README.md of \"trace-android-sdk\" " +
+                            "(https://github.com/bitrise-io/trace-android-sdk/blob/main/README.md)");
         } else {
             logger.lifecycle("Adding dependency on  \"{}\" for project \"{}\".", TRACE_SDK_DEPENDENCY_NAME,
                     appModule.getName());
@@ -428,11 +429,11 @@ public class InjectTraceTask extends DefaultTask {
      * @param content the content to append.
      * @throws IOException when any I/O error occurs with the file on the path.
      */
-    private static void appendContentToTop(final String path, final String content) throws IOException {
+    static void appendContentToTop(final String path, final String content) throws IOException {
         logger.debug("Adding to the top of \"{}\" content:\n\"{}\"", path, content);
-        final List<String> originalContent =  Files.readAllLines(Paths.get(path), StandardCharsets.UTF_8);
+        final List<String> originalContent = Files.readAllLines(Paths.get(path), StandardCharsets.UTF_8);
         Files.write(Paths.get(path), content.getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
-        Files.write(Paths.get(path),originalContent,  StandardOpenOption.APPEND);
+        Files.write(Paths.get(path), originalContent, StandardOpenOption.APPEND);
     }
 
     /**
