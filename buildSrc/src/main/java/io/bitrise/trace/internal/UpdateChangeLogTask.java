@@ -15,8 +15,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -25,6 +25,7 @@ import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
@@ -34,23 +35,40 @@ import javax.inject.Inject;
 public class UpdateChangeLogTask extends DefaultTask {
 
     private final Logger logger;
-    private final Set<String> allowedCommitTypes = new HashSet<>();
+
+    private final Set<String> minorCommitTypes = new HashSet<>(Collections.singletonList("feat"));
+    private final Set<String> patchCommitTypes = new HashSet<>(Collections.singletonList("fix"));
+    private final Set<String> majorCommitTypes = getMajorCommitTypes();
+    private final Set<String> allowedCommitTypes = getAllowedCommitTypes();
 
     @Inject
     public UpdateChangeLogTask() {
         this.logger = getProject().getLogger();
-        initAllowedCommitTypes();
     }
 
     /**
-     * Initialises {@link #allowedCommitTypes} with the conventional commit types that should be in the CHANGELOG.md.
+     * Gets the allowed commit types. They should be in line with the conventional commit types, and only these types
+     * should be added to the CHANGELOG.md.
      *
      * @see <a href=https://www.conventionalcommits.org/en/v1.0.0/>https://www.conventionalcommits.org/en/v1.0.0/</a>
      */
-    private void initAllowedCommitTypes() {
-        final Set<String> allowedCommitTypes = new HashSet<>(Arrays.asList("fix", "feat"));
-        this.allowedCommitTypes.addAll(allowedCommitTypes);
-        allowedCommitTypes.forEach(it -> this.allowedCommitTypes.add(it + "!"));
+    private Set<String> getAllowedCommitTypes() {
+        return Stream.concat(
+                Stream.concat(patchCommitTypes.stream(), minorCommitTypes.stream()),
+                majorCommitTypes.stream())
+                     .collect(Collectors.toSet());
+    }
+
+    /**
+     * Gets the major commit types.
+     *
+     * @return the Set of major commit types.
+     */
+    private Set<String> getMajorCommitTypes() {
+        final Set<String> majorCommitTypes = new HashSet<>();
+        minorCommitTypes.forEach(it -> majorCommitTypes.add(it + "!"));
+        patchCommitTypes.forEach(it -> majorCommitTypes.add(it + "!"));
+        return majorCommitTypes;
     }
 
     /**
@@ -64,16 +82,16 @@ public class UpdateChangeLogTask extends DefaultTask {
         logger.lifecycle("Starting the update of CHANGELOG.md");
         final Git git = getGit();
         final Ref lastTag = getLastTag(git);
-        final String releaseName = getReleaseName(lastTag);
-        logger.lifecycle("The name of the release in the CHANGELOG.md will be: {}", releaseName);
         final List<RevCommit> newCommits = getNewCommits(git, lastTag);
         logger.lifecycle("Found {} commits since last release", newCommits.size());
         if (newCommits.size() == 0) {
             logger.warn("No new commits found, nothing to update, cancelling task");
             return;
         }
-        final List<String> changeLogEntries = formatCommitsToChangeLogEntries(newCommits);
+        final List<ChangeLogEntry> changeLogEntries = formatCommitsToChangeLogEntries(newCommits);
         logger.lifecycle("Formatted commit messages to CHANGELOG entries");
+        final String releaseName = getReleaseName(lastTag, changeLogEntries);
+        logger.lifecycle("The name of the release in the CHANGELOG.md will be: {}", releaseName);
         final File changeLogFile = getChangeLogFile();
         updateChangeLog(changeLogFile, releaseName, changeLogEntries);
         logger.lifecycle("CHANGELOG entries added, finishing task");
@@ -165,16 +183,41 @@ public class UpdateChangeLogTask extends DefaultTask {
     }
 
     /**
-     * Gets the name of the given release. The method {@link Ref#getName()} returns the full form, for example
-     * "refs/tags/0.0.3", which will be clipped to be just the tag name, in this example "0.0.3". This is concated
+     * Gets the name of the given release. Determines the new version from the change log entries. This is concatenated
      * with the current date.
      *
-     * @param tag the given tag
+     * @param lastTag the previous tag.
      * @return the name of the release.
      */
-    private String getReleaseName(final Ref tag) {
-        final String tagShortName = tag.getName().substring(10);
-        return String.format("# %s - %s", tagShortName, getCurrentDate());
+    private String getReleaseName(final Ref lastTag, final List<ChangeLogEntry> changeLogEntries) {
+        final String previousTagShortName = lastTag.getName().substring(10);
+        final Set<String> entryTypeSet =
+                changeLogEntries.stream().map(ChangeLogEntry::getType).collect(Collectors.toSet());
+
+        return String.format("# %s - %s", getNewVersion(previousTagShortName, entryTypeSet), getCurrentDate());
+    }
+
+    /**
+     * Determines the new version from the change log entries (patch, minor or major release). If there are no
+     * changes, it will increase the patch version.
+     *
+     * @param version the previous version.
+     * @param typeSet the Set of types of the change log entries.
+     * @return the new version.
+     */
+    private String getNewVersion(final String version, final Set<String> typeSet) {
+        final String[] versionNumbers = version.split("\\.");
+        if (typeSet.stream().anyMatch(majorCommitTypes::contains)) {
+            versionNumbers[0] = String.valueOf(Integer.parseInt(versionNumbers[0]) + 1);
+            versionNumbers[1] = "0";
+            versionNumbers[2] = "0";
+        } else if (typeSet.stream().anyMatch(minorCommitTypes::contains)) {
+            versionNumbers[1] = String.valueOf(Integer.parseInt(versionNumbers[1]) + 1);
+            versionNumbers[2] = "0";
+        } else {
+            versionNumbers[2] = String.valueOf(Integer.parseInt(versionNumbers[2]) + 1);
+        }
+        return String.format("%s.%s.%s", versionNumbers[0], versionNumbers[1], versionNumbers[2]);
     }
 
     /**
@@ -196,7 +239,7 @@ public class UpdateChangeLogTask extends DefaultTask {
      * @throws IOException if any I/O error occurs.
      */
     private void updateChangeLog(final File changeLogFile, final String releaseName,
-                                 final List<String> changeLogEntries) throws IOException {
+                                 final List<ChangeLogEntry> changeLogEntries) throws IOException {
         final List<String> lines = getFileLines(changeLogFile);
         final List<String> newContent = getUpdatedChangeLogContent(lines, releaseName, changeLogEntries);
         updateFileLines(changeLogFile, newContent);
@@ -233,7 +276,7 @@ public class UpdateChangeLogTask extends DefaultTask {
      * @return the updated content for the CHANGELOG.md.
      */
     private List<String> getUpdatedChangeLogContent(final List<String> originalLines, final String releaseName,
-                                                    final List<String> newEntries) {
+                                                    final List<ChangeLogEntry> newEntries) {
         final int initialPos = 3;
         originalLines.add(initialPos, releaseName);
 
@@ -242,7 +285,7 @@ public class UpdateChangeLogTask extends DefaultTask {
             originalLines.add(initialPos + 1, "* Maintenance release, no fixes or new features");
         } else {
             for (int i = 0; i < newEntries.size(); i++) {
-                originalLines.add(initialPos + 1 + i, newEntries.get(i));
+                originalLines.add(initialPos + 1 + i, newEntries.get(i).toString());
             }
         }
 
@@ -256,7 +299,7 @@ public class UpdateChangeLogTask extends DefaultTask {
      * @param commitsToAdd the commits that should be added to the CHANGELOG.md.
      * @return the formatted change log entries.
      */
-    private List<String> formatCommitsToChangeLogEntries(final List<RevCommit> commitsToAdd) {
+    private List<ChangeLogEntry> formatCommitsToChangeLogEntries(final List<RevCommit> commitsToAdd) {
         final String regexString = "([^:]*):(.*)\n\n((.|\n)*)";
         final String footerRegex = "(\n|\n)APM-[\\d]+(\n|\r|$)";
         final Pattern pattern = Pattern.compile(regexString);
@@ -288,8 +331,8 @@ public class UpdateChangeLogTask extends DefaultTask {
      * @param footerPattern a compiled regex pattern for the footer of the message.
      * @return the formatted change log entry.
      */
-    private String formatCommitToChangeLogEntry(final String commitMessage, final Pattern pattern,
-                                                final Pattern footerPattern) {
+    private ChangeLogEntry formatCommitToChangeLogEntry(final String commitMessage, final Pattern pattern,
+                                                        final Pattern footerPattern) {
         final Matcher matcher = pattern.matcher(commitMessage);
         if (matcher.find()) {
             final String commitType = matcher.group(1).trim();
@@ -297,7 +340,7 @@ public class UpdateChangeLogTask extends DefaultTask {
             logger.debug("Commit type is \n{}\n, title is \n{}\n", commitType, title);
             if (allowedCommitTypes.contains(commitType)) {
                 final String messageWithFooter = removeFooter(matcher.group(3).trim(), footerPattern);
-                return String.format("* %s: **%s:** %s", commitType, title, messageWithFooter);
+                return new ChangeLogEntry(commitType, title, messageWithFooter);
             }
             logger.debug("Skipping commit message with subject \"{}\" as it has a type of {}", title, commitType);
         } else {
@@ -326,5 +369,38 @@ public class UpdateChangeLogTask extends DefaultTask {
      */
     private File getChangeLogFile() {
         return new File("./CHANGELOG.md");
+    }
+
+    /**
+     * Inner data class for change log entries.
+     */
+    private static final class ChangeLogEntry {
+
+        private final String type;
+        private final String title;
+        private final String details;
+
+        public ChangeLogEntry(final String type, final String title, final String details) {
+            this.type = type;
+            this.title = title;
+            this.details = details;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public String getDetails() {
+            return details;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("* %s: **%s:** %s", type, title, details);
+        }
     }
 }
