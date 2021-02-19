@@ -79,6 +79,13 @@ workflows:
                 rootPath=$(pwd)
                 echo "Root path is set to $rootPath"
                 envman add --key IT_ROOT_PATH --value $rootPath
+      - script:
+          title: Run unit tests
+          description: Runs unit tests for InjectTraceTask.
+          inputs:
+            - content: |
+                #!/bin/bash
+                ./gradlew test
 
   # Test and setup for sample-ship-addon-android
   test_0_with_setup_for_sample_ship_addon_android:
