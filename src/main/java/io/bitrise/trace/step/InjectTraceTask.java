@@ -10,6 +10,7 @@ import org.gradle.api.tasks.TaskAction;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -275,8 +276,8 @@ public class InjectTraceTask extends DefaultTask {
         final String buildscriptClosure = "\nbuildscript {\n" +
                 "%s\n" +
                 "%s\n" +
-                "}";
-        appendContentToFile(buildGradlePath, String.format(buildscriptClosure,
+                "}\n";
+        appendContentToTop(buildGradlePath, String.format(buildscriptClosure,
                 getTraceGradlePluginDependency(), getBuildScriptRepositoryContent()));
     }
 
@@ -405,7 +406,7 @@ public class InjectTraceTask extends DefaultTask {
      */
     private static void appendTraceDependency(final String appBuildGradlePath, final String buildFileName)
             throws IOException {
-        appendContentToFile(appBuildGradlePath, getContentToAppend(appBuildGradlePath, buildFileName));
+        appendContent(appBuildGradlePath, getContentToAppend(appBuildGradlePath, buildFileName));
     }
 
     /**
@@ -415,9 +416,23 @@ public class InjectTraceTask extends DefaultTask {
      * @param content the content to append.
      * @throws IOException when any I/O error occurs with the file on the path.
      */
-    private static void appendContentToFile(final String path, final String content) throws IOException {
+    private static void appendContent(final String path, final String content) throws IOException {
         logger.debug("Appending to \"{}\" content:\n\"{}\"", path, content);
         Files.write(Paths.get(path), content.getBytes(), StandardOpenOption.APPEND);
+    }
+
+    /**
+     * Appends the given content to the top of the given file.
+     *
+     * @param path    the path of the file.
+     * @param content the content to append.
+     * @throws IOException when any I/O error occurs with the file on the path.
+     */
+    private static void appendContentToTop(final String path, final String content) throws IOException {
+        logger.debug("Adding to the top of \"{}\" content:\n\"{}\"", path, content);
+        final List<String> originalContent =  Files.readAllLines(Paths.get(path), StandardCharsets.UTF_8);
+        Files.write(Paths.get(path), content.getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
+        Files.write(Paths.get(path),originalContent,  StandardOpenOption.APPEND);
     }
 
     /**
