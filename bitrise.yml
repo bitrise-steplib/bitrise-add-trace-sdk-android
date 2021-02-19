@@ -29,6 +29,7 @@ workflows:
       - test_2_with_setup_for_sample_apps_monorepo_KotlinScrollApp
       - test_3_with_setup_for_sample_apps_monorepo_SimpleAndroid
       - test_4_with_setup_for_sample_apps_monorepo_TabbedAndroid
+      - test_5_with_setup_for_bitrise_android_sample
 
   # Runs before every test to prepare environment
   before_test:
@@ -134,6 +135,17 @@ workflows:
     after_run:
       - _test_step
 
+  # Test and setup for Bitrise-Android-Sample
+  test_5_with_setup_for_bitrise_android_sample:
+    envs:
+      - BITRISEIO_GIT_REPOSITORY_SLUG: "Bitrise-Android-Sample"
+      - IT_REPO_TO_CLONE: "https://github.com/bitrise-io/Bitrise-Android-Sample.git"
+      - IT_SOURCE_DIR: "./$BITRISEIO_GIT_REPOSITORY_SLUG/"
+    before_run:
+      - before_test
+    after_run:
+      - _test_step
+
   # Integration test.
   _test_step:
     steps:
@@ -155,7 +167,6 @@ workflows:
           run_if: true
           inputs:
             - project_path: $IT_SOURCE_DIR
-
 
   # ----------------------------------------------------------------
   # --- workflows to Share this step into a Step Library
