@@ -49,7 +49,7 @@ public class UpdateChangeLogTask extends DefaultTask {
     @Inject
     public UpdateChangeLogTask() {
         this.logger = getProject().getLogger();
-        this.gitHelper = new GitHelper();
+        this.gitHelper = new GitHelper(logger);
     }
 
     /**
@@ -161,6 +161,17 @@ public class UpdateChangeLogTask extends DefaultTask {
      */
     static class GitHelper {
 
+        private final Logger logger;
+
+        /**
+         * Constructor for class.
+         *
+         * @param logger a {@link Logger} that will provide log outputs to the console.
+         */
+        public GitHelper(final Logger logger) {
+            this.logger = logger;
+        }
+
         /**
          * Gets the List of {@link RevCommit}s that happened after the given tag.
          *
@@ -173,8 +184,10 @@ public class UpdateChangeLogTask extends DefaultTask {
             final RevWalk revWalk = getAllCommits(git);
             final Ref peeledRef = git.getRepository().getRefDatabase().peel(fromTag);
             if (peeledRef.getPeeledObjectId() != null) {
+                logger.debug("Using peeled reference ID {} as tag ID.", peeledRef.getPeeledObjectId());
                 return getNewCommits(revWalk, peeledRef.getPeeledObjectId());
             } else {
+                logger.debug("Using reference ID {} as tag ID.", peeledRef.getObjectId());
                 return getNewCommits(revWalk, peeledRef.getObjectId());
             }
         }
@@ -192,8 +205,10 @@ public class UpdateChangeLogTask extends DefaultTask {
 
             final List<RevCommit> newCommits = new ArrayList<>();
             while (next != null) {
+                logger.debug("Checking if commit with message \"{}\" and ID \"{}\" is a tag or not.",
+                        next.getShortMessage(), next.getId());
                 if (objectId.equals(next.getId())) {
-                    // Found the tag
+                    logger.debug("Found tag!");
                     break;
                 }
 
@@ -284,8 +299,10 @@ public class UpdateChangeLogTask extends DefaultTask {
          */
         String getReleaseName(final Ref lastTag, final List<ChangeLogEntry> changeLogEntries) {
             final String previousTagShortName = lastTag.getName().substring(Constants.R_TAGS.length());
+            logger.debug("The name of the last tag was \"{}\"", previousTagShortName);
             final Set<String> entryTypeSet =
                     changeLogEntries.stream().map(ChangeLogEntry::getType).collect(Collectors.toSet());
+            entryTypeSet.forEach(type -> logger.debug("Found in new commits type \"{}\"", type));
 
             return String.format("# %s - %s", getNewVersion(previousTagShortName, entryTypeSet), getCurrentDate());
         }
@@ -301,13 +318,16 @@ public class UpdateChangeLogTask extends DefaultTask {
         String getNewVersion(final String version, final Set<String> typeSet) {
             final String[] versionNumbers = version.split("\\.");
             if (typeSet.stream().anyMatch(majorCommitTypes::contains)) {
+                logger.debug("New version will have major version increase!");
                 versionNumbers[0] = String.valueOf(Integer.parseInt(versionNumbers[0]) + 1);
                 versionNumbers[1] = "0";
                 versionNumbers[2] = "0";
             } else if (typeSet.stream().anyMatch(minorCommitTypes::contains)) {
+                logger.debug("New version will have minor version increase!");
                 versionNumbers[1] = String.valueOf(Integer.parseInt(versionNumbers[1]) + 1);
                 versionNumbers[2] = "0";
             } else {
+                logger.debug("New version will have patch version increase!");
                 versionNumbers[2] = String.valueOf(Integer.parseInt(versionNumbers[2]) + 1);
             }
             return String.format("%s.%s.%s", versionNumbers[0], versionNumbers[1], versionNumbers[2]);

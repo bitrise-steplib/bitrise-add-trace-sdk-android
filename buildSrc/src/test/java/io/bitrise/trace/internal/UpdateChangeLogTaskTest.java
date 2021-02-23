@@ -36,7 +36,10 @@ import static org.junit.Assert.assertTrue;
 public class UpdateChangeLogTaskTest {
 
     // region common
-    private final UpdateChangeLogTask.GitHelper gitHelper = new UpdateChangeLogTask.GitHelper();
+    private final UpdateChangeLogTask.GitHelper gitHelper = new UpdateChangeLogTask.GitHelper(
+            Logging.getLogger(UpdateChangeLogTaskTest.class.getName()));
+    private final UpdateChangeLogTask.ChangeLogHelper changeLogHelper = new UpdateChangeLogTask.ChangeLogHelper(
+            Logging.getLogger(UpdateChangeLogTaskTest.class.getName()));
 
     private static final String dummyCommitTemplate = "%s: %s\n\n%s\n\n%s";
 
@@ -287,8 +290,6 @@ public class UpdateChangeLogTaskTest {
     // endRegion
 
     // startRegion change log
-    private final UpdateChangeLogTask.ChangeLogHelper changeLogHelper = new UpdateChangeLogTask.ChangeLogHelper(
-            Logging.getLogger(UpdateChangeLogTaskTest.class.getName()));
 
     @Test
     public void formatCommitToChangeLogEntry_ShouldHaveExpectedFormat() {
