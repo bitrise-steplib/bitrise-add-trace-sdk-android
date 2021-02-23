@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+# 0.0.5 - 2021.02.19
+* fix: **Buildscript block order issue:** Buildscript blocks should be declared before any plugins block.
+  This has been fixed.
+
 # 0.0.4 - 2021.02.15
 * fix: **Path issue:** Fixed path issue for default "project_path" step input.
 
