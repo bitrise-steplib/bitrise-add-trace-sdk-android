@@ -5,16 +5,12 @@ buildscript {
         jcenter()
         google()
     }
-
     dependencies {
-        classpath files("./buildSrc/main/java/*")
-
+        classpath files('./buildSrc/build/classes/java/main')
     }
 }
 
-
 apply plugin: "java"
-
 
 allprojects {
     repositories {
