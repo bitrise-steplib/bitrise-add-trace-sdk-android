@@ -32,6 +32,17 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Unit tests for {@link UpdateChangeLogTask}.
+ * <p>
+ * Note: you might have issues with running a single test case or this test via the gutter buttons/Android JUnit Test
+ * configurations in Android Studio. The issue is "Gradle-Aware Make", for some reason it hangs Android Studio from
+ * running test cases this way. To overcome this, you have to remove "Gradle-Aware Make" from the given configuration.
+ * Also, if you previously run it without this fix, you have to restart Android Studio.
+ * <p>
+ * Further note: you might have to redo this after every restart, as "Gradle-Aware Make" is re-added each time to your
+ * configurations by Android Studio. See linked Google issue.
+ *
+ * @see
+ * <a href="https://issuetracker.google.com/issues/77840239#comment3">https://issuetracker.google.com/issues/77840239#comment3</a>
  */
 public class UpdateChangeLogTaskTest {
 
