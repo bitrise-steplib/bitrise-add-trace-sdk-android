@@ -40,6 +40,11 @@ import static org.junit.Assert.assertTrue;
  * <p>
  * Further note: you might have to redo this after every restart, as "Gradle-Aware Make" is re-added each time to your
  * configurations by Android Studio. See linked Google issue.
+ * <p>
+ * Additional note: for some reason if you right click on the reports file in build/reports/tests/test/index.html and
+ * press "Open in Browser", it will open the test results for root folder tests (InjectTraceTaskTest). Seems like
+ * this is an Android Studio/IntelliJ IDEA issue. To overcome this, you have to open manually the file from any
+ * compatible application (for example use "Finder" for macOS machines).
  *
  * @see
  * <a href="https://issuetracker.google.com/issues/77840239#comment3">https://issuetracker.google.com/issues/77840239#comment3</a>
