@@ -27,4 +27,4 @@ dependencies {
     testImplementation "org.mockito:mockito-core:3.2.4"
 }
 
-task updateChangeLogTask(type: UpdateChangeLogTask)
+task updateChangeLog(type: UpdateChangeLogTask)
