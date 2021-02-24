@@ -32,7 +32,15 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 
 /**
- * Internal task for updating the CHANGELOG.md of this repository. Run this task before release.
+ * Internal task for updating the CHANGELOG.md of this repository. Run this task before release, it will update the
+ * CHANGELOG.md with the changes made since the last tag.
+ * Commits should follow the conventional commits, because this task creates the change log entries based on that.
+ * Only commit types "fix", "feat", "fix!" and "feat!" will be inserted to the CHANGELOG.md (these are referred in
+ * the code as the allowed commits).
+ * When the task is executed, the changes will be uncommitted, you have to commit and push it to the remote
+ * repository. Before doing this it is recommended to manually check the changes for any unexpected result, for
+ * example for typos, wrong commit types, malformed entries, etc.
+ * For additional information please check the Android Team Release process in Confluence.
  */
 public class UpdateChangeLogTask extends DefaultTask {
 
@@ -44,6 +52,10 @@ public class UpdateChangeLogTask extends DefaultTask {
     private static final Set<String> majorCommitTypes = getMajorCommitTypes();
     private static final Set<String> allowedCommitTypes = getAllowedCommitTypes();
 
+    private static final int VERSION_INDEX_PATCH = 0;
+    private static final int VERSION_INDEX_MINOR = 1;
+    private static final int VERSION_INDEX_MAJOR = 2;
+
     static final String maintenanceReleaseEntry = "* Maintenance release, no fixes or new features";
 
     @Inject
@@ -54,7 +66,8 @@ public class UpdateChangeLogTask extends DefaultTask {
 
     /**
      * Gets the allowed commit types. They should be in line with the conventional commit types, and only these types
-     * should be added to the CHANGELOG.md.
+     * should be added to the CHANGELOG.md. Using other commit types is allowed, but they will not be added to the
+     * CHANGELOG.md.
      *
      * @see <a href=https://www.conventionalcommits.org/en/v1.0.0/>https://www.conventionalcommits.org/en/v1.0.0/</a>
      */
@@ -319,18 +332,22 @@ public class UpdateChangeLogTask extends DefaultTask {
             final String[] versionNumbers = version.split("\\.");
             if (typeSet.stream().anyMatch(majorCommitTypes::contains)) {
                 logger.debug("New version will have major version increase!");
-                versionNumbers[0] = String.valueOf(Integer.parseInt(versionNumbers[0]) + 1);
-                versionNumbers[1] = "0";
-                versionNumbers[2] = "0";
+                versionNumbers[VERSION_INDEX_PATCH] = String.valueOf(
+                        Integer.parseInt(versionNumbers[VERSION_INDEX_PATCH]) + 1);
+                versionNumbers[VERSION_INDEX_MINOR] = "0";
+                versionNumbers[VERSION_INDEX_MAJOR] = "0";
             } else if (typeSet.stream().anyMatch(minorCommitTypes::contains)) {
                 logger.debug("New version will have minor version increase!");
-                versionNumbers[1] = String.valueOf(Integer.parseInt(versionNumbers[1]) + 1);
-                versionNumbers[2] = "0";
+                versionNumbers[VERSION_INDEX_MINOR] = String.valueOf(
+                        Integer.parseInt(versionNumbers[VERSION_INDEX_MINOR]) + 1);
+                versionNumbers[VERSION_INDEX_MAJOR] = "0";
             } else {
                 logger.debug("New version will have patch version increase!");
-                versionNumbers[2] = String.valueOf(Integer.parseInt(versionNumbers[2]) + 1);
+                versionNumbers[VERSION_INDEX_MAJOR] = String.valueOf(
+                        Integer.parseInt(versionNumbers[VERSION_INDEX_MAJOR]) + 1);
             }
-            return String.format("%s.%s.%s", versionNumbers[0], versionNumbers[1], versionNumbers[2]);
+            return String.format("%s.%s.%s", versionNumbers[VERSION_INDEX_PATCH], versionNumbers[VERSION_INDEX_MINOR],
+                    versionNumbers[VERSION_INDEX_MAJOR]);
         }
 
         /**
