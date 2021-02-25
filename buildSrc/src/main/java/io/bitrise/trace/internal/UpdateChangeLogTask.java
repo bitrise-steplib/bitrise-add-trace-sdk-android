@@ -356,7 +356,7 @@ public class UpdateChangeLogTask extends DefaultTask {
          * @return the String value of the current date.
          */
         private String getCurrentDate() {
-            final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy.MM.dd");
+            final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
             return simpleDateFormat.format(Calendar.getInstance(TimeZone.getDefault()).getTime());
         }
 
@@ -460,7 +460,7 @@ public class UpdateChangeLogTask extends DefaultTask {
         ChangeLogEntry formatCommitToChangeLogEntry(final String commitMessage) {
             final Matcher matcher = messagePattern.matcher(commitMessage);
             if (matcher.find()) {
-                final String commitType = matcher.group(1).trim();
+                final String commitType = matcher.group(1).trim().toLowerCase();
                 final String title = matcher.group(2).trim();
                 logger.debug("Commit type is \n{}\n, title is \n{}\n", commitType, title);
                 if (allowedCommitTypes.contains(commitType)) {
