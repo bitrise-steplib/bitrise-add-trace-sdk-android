@@ -37,7 +37,7 @@ public class InjectTraceTaskTest {
         InjectTraceTask.logger = Logging.getLogger(InjectTraceTaskTest.class.getName());
     }
 
-    //region getSmallestNonNegativeNumber tests
+    // region getSmallestNonNegativeNumber tests
     @Test
     public void getSmallestNonNegativeNumber_onePositive() {
         final int actual = InjectTraceTask.getSmallestNonNegativeNumber(1);
@@ -91,9 +91,9 @@ public class InjectTraceTaskTest {
         final int actual = InjectTraceTask.getSmallestNonNegativeNumber(1, -2, 3, -4, 5);
         assertThat(actual, is(1));
     }
-    //endregion
+    // endregion
 
-    //region removeGreedyCommentBlocksFromLine tests
+    // region removeGreedyCommentBlocksFromLine tests
 
     @Test
     public void removeGreedyCommentBlocksFromLine_none() {
@@ -128,9 +128,9 @@ public class InjectTraceTaskTest {
                 InjectTraceTask.getGreedyCommentBlockPattern());
         assertThat(actual, is(String.format(line, "/*")));
     }
-    //endregion
+    // endregion
 
-    //region removeCommentedCode tests
+    // region removeCommentedCode tests
 
     private static final String LINE_COMMENT = "//";
     private static final String GREEDY_COMMENT_START = "/*";
@@ -319,9 +319,9 @@ public class InjectTraceTaskTest {
         final String expected = STRING_CONTENT_WITH_CHAR_LITERAL + "\n";
         assertThat(actual, equalTo(expected));
     }
-    //endregion
+    // endregion
 
-    //region getIndexOfFromCode tests
+    // region getIndexOfFromCode tests
 
     @Test
     public void getIndexOfFromCode_ShouldFind() {
@@ -342,7 +342,7 @@ public class InjectTraceTaskTest {
     }
     // endRegion
 
-    //region hasDependency tests
+    // region hasDependency tests
     private final static String DUMMY_DEPENDENCY_NAME = "dummy-dependency";
     private final static String DUMMY_DEPENDENCY_GROUP_NAME = "io.bitrise.dummy";
     private final static Dependency DUMMY_DEPENDENCY = mock(Dependency.class);
@@ -379,9 +379,9 @@ public class InjectTraceTaskTest {
                 DUMMY_DEPENDENCY_GROUP_NAME);
         assertThat(actualValue, is(false));
     }
-    //endregion
+    // endregion
 
-    //region getContentToAppend tests
+    // region getContentToAppend tests
     private static final String DUMMY_GRADLE_FILE_NAME = "dummy.gradle";
 
     @Test
@@ -400,13 +400,13 @@ public class InjectTraceTaskTest {
     public void getContentToAppend_None() {
         InjectTraceTask.getContentToAppend("README.md", DUMMY_GRADLE_FILE_NAME);
     }
-    //endregion
+    // endregion
 
-    //region updateBuildScriptContent
+    // region updateBuildScriptContent
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
-    private final static String DUMMY_BUILD_GRADLE_CONTENT = "\n" +
+    private final static String DUMMY_BUILD_GRADLE_CONTENT_1 = "\n" +
             "someContent\n" +
             "buildscript {" +
             "%s" +
@@ -419,18 +419,37 @@ public class InjectTraceTaskTest {
             "        classpath 'com.android.tools.build:gradle:4.0.2'\n" +
             "    }\n" +
             "} " +
-            "\nsomeContent";
+            "\nsomeOtherContent";
+
+    private final static String DUMMY_BUILD_GRADLE_CONTENT_2 = "\n" +
+            "def stringName = \"buildscript {\"" +
+            DUMMY_BUILD_GRADLE_CONTENT_1;
 
     @Test
     public void updateBuildScriptContent_BuildScriptShouldBeUpdated() throws IOException {
         final File tempFile = tempFolder.newFile("build.gradle");
-        FileUtils.writeStringToFile(tempFile, String.format(DUMMY_BUILD_GRADLE_CONTENT, "\n"),
+        FileUtils.writeStringToFile(tempFile, String.format(DUMMY_BUILD_GRADLE_CONTENT_1, "\n"),
                 Charset.defaultCharset());
 
         InjectTraceTask.updateBuildScriptContent(tempFile.getPath());
 
         final String actual = FileUtils.readFileToString(tempFile, Charset.defaultCharset());
-        final String expected = String.format(DUMMY_BUILD_GRADLE_CONTENT + "\n",
+        final String expected = String.format(DUMMY_BUILD_GRADLE_CONTENT_1 + "\n",
+                InjectTraceTask.getTraceGradlePluginDependency() + InjectTraceTask.getBuildScriptRepositoryContent() + "\n");
+
+        assertThat(actual, equalTo(expected));
+    }
+
+    @Test
+    public void updateBuildScriptContent_LiteralsShouldNotBeAffected() throws IOException {
+        final File tempFile = tempFolder.newFile("build.gradle");
+        FileUtils.writeStringToFile(tempFile, String.format(DUMMY_BUILD_GRADLE_CONTENT_2, "\n"),
+                Charset.defaultCharset());
+
+        InjectTraceTask.updateBuildScriptContent(tempFile.getPath());
+
+        final String actual = FileUtils.readFileToString(tempFile, Charset.defaultCharset());
+        final String expected = String.format(DUMMY_BUILD_GRADLE_CONTENT_2 + "\n",
                 InjectTraceTask.getTraceGradlePluginDependency() + InjectTraceTask.getBuildScriptRepositoryContent() + "\n");
 
         assertThat(actual, equalTo(expected));
@@ -439,7 +458,7 @@ public class InjectTraceTaskTest {
     @Test
     public void appendContentToTop_ContentShouldBeOnTheTop() throws IOException {
         final File tempFile = tempFolder.newFile("build.gradle");
-        FileUtils.writeStringToFile(tempFile, String.format(DUMMY_BUILD_GRADLE_CONTENT, "\n"),
+        FileUtils.writeStringToFile(tempFile, String.format(DUMMY_BUILD_GRADLE_CONTENT_1, "\n"),
                 Charset.defaultCharset());
 
         final String dummyTopContent = "THIS SHOULD BE ON THE TOP";
@@ -450,6 +469,25 @@ public class InjectTraceTaskTest {
         originalContent.add(0, dummyTopContent);
         final List<String> actual = Files.readAllLines(Paths.get(tempFile.getPath()), StandardCharsets.UTF_8);
         assertEquals(expected, actual);
+    }
+
+    @Test
+    public void findStringLiterals_SingleResult() {
+        final List<InjectTraceTask.Range> actual = InjectTraceTask.findStringLiterals(DUMMY_BUILD_GRADLE_CONTENT_1);
+        final List<InjectTraceTask.Range> expected = new ArrayList<>();
+        expected.add(new InjectTraceTask.Range(146, 184));
+
+        assertThat(actual, is(expected));
+    }
+
+    @Test
+    public void findStringLiterals_MultiResult() {
+        final List<InjectTraceTask.Range> actual = InjectTraceTask.findStringLiterals(DUMMY_BUILD_GRADLE_CONTENT_2);
+        final List<InjectTraceTask.Range> expected = new ArrayList<>();
+        expected.add(new InjectTraceTask.Range(18, 33));
+        expected.add(new InjectTraceTask.Range(179, 217));
+
+        assertThat(actual, is(expected));
     }
     //endregion
 }
