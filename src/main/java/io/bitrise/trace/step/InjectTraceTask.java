@@ -15,8 +15,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -254,8 +256,18 @@ public class InjectTraceTask extends DefaultTask {
         final String regex = "buildscript[ \\t\\n\\r]*\\{";
         final Pattern pattern = Pattern.compile(regex);
         final Matcher matcher = pattern.matcher(codeContent);
+        final List<Range> literalsPos = findStringLiterals(codeContent);
         if (matcher.find()) {
-            final String updatedContent = matcher.replaceFirst(getUpdatedBuildScriptContent());
+            boolean result = true;
+            while (literalsPos.stream().anyMatch(it -> it.intersect(matcher.start()))) {
+                result = matcher.find();
+            }
+            if (!result) {
+                return result;
+            }
+
+            final String updatedContent = codeContent.substring(0,
+                    matcher.start()) + getUpdatedBuildScriptContent() + codeContent.substring(matcher.end());
             try (final FileWriter fileWriter = new FileWriter(path, false)) {
                 logger.debug("Updating \"{}\" with new content: \n\"{}\"", path, updatedContent);
                 fileWriter.append(updatedContent);
@@ -263,6 +275,24 @@ public class InjectTraceTask extends DefaultTask {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Finds and returns the positions of String literals in a given code content.
+     *
+     * @param codeContent the code content to examine.
+     * @return a List of {@link Range}s.
+     */
+    static List<Range> findStringLiterals(final String codeContent) {
+        final List<Range> literalPos = new ArrayList<>();
+        final String regex = "(['\"])(?:(?!(?:\\\\|\\1)).|\\\\.)*\\1";
+        final Pattern pattern = Pattern.compile(regex);
+        final Matcher matcher = pattern.matcher(codeContent);
+
+        while (matcher.find()) {
+            literalPos.add(new Range(matcher.start(), matcher.end()));
+        }
+        return literalPos;
     }
 
     /**
@@ -616,4 +646,46 @@ public class InjectTraceTask extends DefaultTask {
         return Arrays.stream(numbers).filter(i -> i >= 0).min().orElse(-1);
     }
     //endregion
+
+    /**
+     * Inner data class for a range value (which has a start and an end).
+     */
+    static class Range {
+        private final int start;
+        private final int end;
+
+        public Range(final int start, final int end) {
+            this.start = start;
+            this.end = end;
+        }
+
+        public boolean intersect(final int value) {
+            return value <= end && value >= start;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof Range)) {
+                return false;
+            }
+            final Range range = (Range) o;
+            return start == range.start && end == range.end;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(start, end);
+        }
+
+        @Override
+        public String toString() {
+            return "Range{" +
+                    "start=" + start +
+                    ", end=" + end +
+                    '}';
+        }
+    }
 }
