@@ -511,7 +511,7 @@ public class InjectTraceTask extends DefaultTask {
             logger.debug("Removing comments from line \"{}\"", line);
             String reducedLine = removeGreedyCommentBlocksFromLine(line, pattern);
             logger.debug("Removed complete greedy comments: \"{}\"", reducedLine);
-            final int gceIndex = reducedLine.indexOf(greedyCommentEnd);
+            final int gceIndex = getIndexOfFromCode(reducedLine, greedyCommentEnd);
             if (gceIndex >= 0) {
                 reducedLine = reducedLine.substring(reducedLine.indexOf(greedyCommentEnd) + greedyCommentEnd.length());
                 isGreedyCommented = false;
@@ -523,8 +523,8 @@ public class InjectTraceTask extends DefaultTask {
                 }
             }
 
-            final int clcIndex = reducedLine.indexOf(currentLineComment);
-            final int gcsIndex = reducedLine.indexOf(greedyCommentStart);
+            final int clcIndex = getIndexOfFromCode(reducedLine, currentLineComment);
+            final int gcsIndex = getIndexOfFromCode(reducedLine, greedyCommentStart);
             final int csIndex = getSmallestNonNegativeNumber(clcIndex, gcsIndex);
             if (csIndex >= 0) {
                 if (csIndex == gcsIndex) {
@@ -537,6 +537,48 @@ public class InjectTraceTask extends DefaultTask {
             stringBuilder.append(reducedLine).append("\n");
         }
         return stringBuilder.toString();
+    }
+
+    /**
+     * Gets the index of a given substring from a given code line. Ignores String and char contents.
+     *
+     * @param text      the String that will be checked.
+     * @param searchFor the substring to look for.
+     * @return the index of the start of the substring if there is a match, {@code -1} otherwise (similarly to
+     * {@link String#indexOf(int)}).
+     */
+    static int getIndexOfFromCode(final String text, final String searchFor) {
+        final char[] searchForChars = searchFor.toCharArray();
+        boolean skipNext = false;
+        for (int i = 0; i < text.length(); i++) {
+            final char currentChar = text.charAt(i);
+            if (currentChar == '"' || currentChar == '\'') {
+                skipNext = !skipNext;
+                continue;
+            }
+
+            if (skipNext) {
+                continue;
+            }
+
+            boolean match = false;
+            for (int j = 0; j < searchForChars.length; j++) {
+                if (i + j >= text.length()) {
+                    break;
+                }
+                if (text.charAt(i + j) == searchForChars[j]) {
+                    match = true;
+                    continue;
+                }
+                match = false;
+                break;
+            }
+
+            if (match) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /**
