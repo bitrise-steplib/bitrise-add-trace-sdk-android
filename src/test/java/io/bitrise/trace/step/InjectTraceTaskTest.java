@@ -136,6 +136,8 @@ public class InjectTraceTaskTest {
     private static final String GREEDY_COMMENT_START = "/*";
     private static final String GREEDY_COMMENT_END = "*/";
     private static final String STRING_CONTENT = "This is a dummy String";
+    private static final String STRING_CONTENT_WITH_LITERAL = "def website =\"https://bitrise.io\"";
+    private static final String STRING_CONTENT_WITH_CHAR_LITERAL = "def website ='https://bitrise.io'";
 
     @Test
     public void removeCommentedCode_none() {
@@ -297,7 +299,48 @@ public class InjectTraceTaskTest {
         final String expected = String.format("\n%1$s\n", STRING_CONTENT);
         assertThat(actual, equalTo(expected));
     }
+
+    @Test
+    public void removeCommentedCode_DoNotModifyStrings() {
+        final ArrayList<String> codeLines = new ArrayList<String>() {{
+            add(STRING_CONTENT_WITH_LITERAL);
+        }};
+        final String actual = InjectTraceTask.removeCommentedCode(codeLines);
+        final String expected = STRING_CONTENT_WITH_LITERAL + "\n";
+        assertThat(actual, equalTo(expected));
+    }
+
+    @Test
+    public void removeCommentedCode_DoNotModifyChars() {
+        final ArrayList<String> codeLines = new ArrayList<String>() {{
+            add(STRING_CONTENT_WITH_CHAR_LITERAL);
+        }};
+        final String actual = InjectTraceTask.removeCommentedCode(codeLines);
+        final String expected = STRING_CONTENT_WITH_CHAR_LITERAL + "\n";
+        assertThat(actual, equalTo(expected));
+    }
     //endregion
+
+    //region getIndexOfFromCode tests
+
+    @Test
+    public void getIndexOfFromCode_ShouldFind() {
+        final int actual = InjectTraceTask.getIndexOfFromCode(STRING_CONTENT, "dummy");
+        assertThat(actual, equalTo(10));
+    }
+
+    @Test
+    public void getIndexOfFromCode_StringLiteral_ShouldNotFind() {
+        final int actual = InjectTraceTask.getIndexOfFromCode(STRING_CONTENT_WITH_LITERAL, "http");
+        assertThat(actual, equalTo(-1));
+    }
+
+    @Test
+    public void getIndexOfFromCode_CharLiteral_ShouldNotFind() {
+        final int actual = InjectTraceTask.getIndexOfFromCode(STRING_CONTENT_WITH_CHAR_LITERAL, "http");
+        assertThat(actual, equalTo(-1));
+    }
+    // endRegion
 
     //region hasDependency tests
     private final static String DUMMY_DEPENDENCY_NAME = "dummy-dependency";
