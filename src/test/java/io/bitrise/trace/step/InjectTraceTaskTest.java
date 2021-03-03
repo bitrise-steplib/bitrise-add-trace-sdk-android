@@ -425,6 +425,14 @@ public class InjectTraceTaskTest {
             "def stringName = \"buildscript {\"" +
             DUMMY_BUILD_GRADLE_CONTENT_1;
 
+    private final static String DUMMY_BUILD_GRADLE_CONTENT_3 = "\n" +
+            "someContent\n" +
+            " dependencies {" +
+            "   implementation fileTree(dir: 'libs', include: ['*.jar'])\n" +
+            "   implementation \"io.bitrise.trace:trace-sdk:0.0.7\"" +
+            "}" +
+            "\nsomeOtherContent";
+
     @Test
     public void updateBuildScriptContent_BuildScriptShouldBeUpdated() throws IOException {
         final File tempFile = tempFolder.newFile("build.gradle");
@@ -456,6 +464,15 @@ public class InjectTraceTaskTest {
     }
 
     @Test
+    public void updateBuildScriptContent_NoMatch() throws IOException {
+        final File tempFile = tempFolder.newFile("build.gradle");
+        FileUtils.writeStringToFile(tempFile, DUMMY_BUILD_GRADLE_CONTENT_3,  Charset.defaultCharset());
+
+        final boolean actual = InjectTraceTask.updateBuildScriptContent(tempFile.getPath());
+        assertThat(actual, equalTo(false));
+    }
+
+    @Test
     public void appendContentToTop_ContentShouldBeOnTheTop() throws IOException {
         final File tempFile = tempFolder.newFile("build.gradle");
         FileUtils.writeStringToFile(tempFile, String.format(DUMMY_BUILD_GRADLE_CONTENT_1, "\n"),
@@ -469,6 +486,14 @@ public class InjectTraceTaskTest {
         originalContent.add(0, dummyTopContent);
         final List<String> actual = Files.readAllLines(Paths.get(tempFile.getPath()), StandardCharsets.UTF_8);
         assertEquals(expected, actual);
+    }
+
+    @Test
+    public void findStringLiterals_EmptyResult() {
+        final List<InjectTraceTask.Range> actual = InjectTraceTask.findStringLiterals(STRING_CONTENT);
+        final List<InjectTraceTask.Range> expected = new ArrayList<>();
+
+        assertThat(actual, is(expected));
     }
 
     @Test

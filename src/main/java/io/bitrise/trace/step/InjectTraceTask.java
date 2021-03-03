@@ -258,12 +258,12 @@ public class InjectTraceTask extends DefaultTask {
         final Matcher matcher = pattern.matcher(codeContent);
         final List<Range> literalsPos = findStringLiterals(codeContent);
         if (matcher.find()) {
-            boolean result = true;
+            boolean matcherFindResult = true;
             while (literalsPos.stream().anyMatch(it -> it.intersect(matcher.start()))) {
-                result = matcher.find();
+                matcherFindResult = matcher.find();
             }
-            if (!result) {
-                return result;
+            if (!matcherFindResult) {
+                return false;
             }
 
             final String updatedContent = codeContent.substring(0,
