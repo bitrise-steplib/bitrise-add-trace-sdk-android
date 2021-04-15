@@ -413,7 +413,7 @@ public class InjectTraceTaskTest {
             "    repositories {\n" +
             "        mavenLocal()\n" +
             "        google()\n" +
-            "        jcenter()\n" +
+            "        mavenCentral()\n" +
             "    }\n" +
             "    dependencies {\n" +
             "        classpath 'com.android.tools.build:gradle:4.0.2'\n" +
