@@ -347,7 +347,7 @@ public class UpdateChangeLogTaskTest {
                 changeLogHelper.getChangeLogEntries(newCommits);
 
         final String actual = changeLogHelper.getReleaseName(lastTag, changeLogEntries);
-        assertTrue(actual.startsWith("# 1.0.0 - "));
+        assertTrue(actual.startsWith("## 1.0.0 - "));
     }
 
     @Test
@@ -356,7 +356,7 @@ public class UpdateChangeLogTaskTest {
         final List<UpdateChangeLogTask.ChangeLogEntry> changeLogEntries = Collections.emptyList();
 
         final String actual = changeLogHelper.getReleaseName(lastTag, changeLogEntries);
-        assertTrue(actual.startsWith("# 0.1.1 -"));
+        assertTrue(actual.startsWith("## 0.1.1 -"));
     }
 
     @Test

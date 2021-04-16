@@ -317,7 +317,7 @@ public class UpdateChangeLogTask extends DefaultTask {
                     changeLogEntries.stream().map(ChangeLogEntry::getType).collect(Collectors.toSet());
             entryTypeSet.forEach(type -> logger.debug("Found in new commits type \"{}\"", type));
 
-            return String.format("# %s - %s", getNewVersion(previousTagShortName, entryTypeSet), getCurrentDate());
+            return String.format("## %s - %s", getNewVersion(previousTagShortName, entryTypeSet), getCurrentDate());
         }
 
         /**
