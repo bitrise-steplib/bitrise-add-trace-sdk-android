@@ -413,7 +413,7 @@ public class InjectTraceTaskTest {
             "    repositories {\n" +
             "        mavenLocal()\n" +
             "        google()\n" +
-            "        jcenter()\n" +
+            "        mavenCentral()\n" +
             "    }\n" +
             "    dependencies {\n" +
             "        classpath 'com.android.tools.build:gradle:4.0.2'\n" +
@@ -500,7 +500,7 @@ public class InjectTraceTaskTest {
     public void findStringLiterals_SingleResult() {
         final List<InjectTraceTask.Range> actual = InjectTraceTask.findStringLiterals(DUMMY_BUILD_GRADLE_CONTENT_1);
         final List<InjectTraceTask.Range> expected = new ArrayList<>();
-        expected.add(new InjectTraceTask.Range(146, 184));
+        expected.add(new InjectTraceTask.Range(151, 189));
 
         assertThat(actual, is(expected));
     }
@@ -510,7 +510,7 @@ public class InjectTraceTaskTest {
         final List<InjectTraceTask.Range> actual = InjectTraceTask.findStringLiterals(DUMMY_BUILD_GRADLE_CONTENT_2);
         final List<InjectTraceTask.Range> expected = new ArrayList<>();
         expected.add(new InjectTraceTask.Range(18, 33));
-        expected.add(new InjectTraceTask.Range(179, 217));
+        expected.add(new InjectTraceTask.Range(184, 222));
 
         assertThat(actual, is(expected));
     }

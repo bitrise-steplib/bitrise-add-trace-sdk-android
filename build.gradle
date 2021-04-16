@@ -2,7 +2,7 @@ import io.bitrise.trace.internal.UpdateChangeLogTask
 
 buildscript {
     repositories {
-        jcenter()
+        mavenCentral()
         google()
     }
     dependencies {
@@ -14,7 +14,7 @@ apply plugin: "java"
 
 allprojects {
     repositories {
-        jcenter()
+        mavenCentral()
     }
 }
 

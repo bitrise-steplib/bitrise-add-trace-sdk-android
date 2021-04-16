@@ -244,7 +244,7 @@ public class InjectTraceTask extends DefaultTask {
     /**
      * When adding {@link #TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME} to the given project and it does have a buildscript
      * block in it's build.gradle, this method updates the buildscript closure. Injects the dependency on the
-     * {@link #TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME} and adds JCenter as repository. If the buildscript closure is not
+     * {@link #TRACE_GRADLE_PLUGIN_DEPENDENCY_NAME} and adds mavenCentral as repository. If the buildscript closure is not
      * present does nothing and returns {@code false}.
      *
      * @param path the path of the file.
@@ -344,7 +344,7 @@ public class InjectTraceTask extends DefaultTask {
      */
     static String getBuildScriptRepositoryContent() {
         return "   repositories {\n" +
-                "      jcenter()\n" +
+                "      mavenCentral()\n" +
                 "      google()\n" +
                 "    }";
     }
