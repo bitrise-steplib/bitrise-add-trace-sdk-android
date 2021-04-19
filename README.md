@@ -73,6 +73,8 @@ envs:
 - A_SECRET_PARAM_TWO: the value for secret two
 ```
 
+Note: This project does not currently use Go modules. From Go 1.16 GOPATH mode is disabled by default and this Step does not migrate to go modules automatically (But Steps not yet using Go modules are migrated at runtime by Bitrise CLI). To run locally, you need to ensure you have the following go environment variable set: `env -w GO111MODULE=auto`.
+
 ## How to create your own step
 
 1. Create a new git repository for your step (**don't fork** the *step template*, create a *new* repository)
